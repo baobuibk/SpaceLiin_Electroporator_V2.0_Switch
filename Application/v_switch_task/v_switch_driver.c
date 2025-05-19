@@ -61,16 +61,43 @@ __STATIC_INLINE void VS_Set_ARR(PWM_TypeDef *PWMx, uint32_t _ARR, bool apply_now
 void V_Switch_Driver_Init(void)
 {
     // V SWITCH HV INIT
-    PWM_Init(V_Switch_HV.PWM);
-    PWM_Enable(V_Switch_HV.PWM);
-    LL_GPIO_ResetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
-    LL_TIM_DisableIT_UPDATE(V_Switch_HV.PWM->TIMx);
+    LL_TIM_OC_SetMode(V_Switch_HV.PWM->TIMx, V_Switch_HV.PWM->Channel,  LL_TIM_OCMODE_FORCED_INACTIVE);
+    LL_TIM_OC_SetPolarity(V_Switch_HV.PWM->TIMx, V_Switch_HV.PWM->Channel, LL_TIM_OCPOLARITY_HIGH);
+    LL_TIM_OC_EnablePreload(V_Switch_HV.PWM->TIMx, V_Switch_HV.PWM->Channel);
+    LL_TIM_CC_EnableChannel(V_Switch_HV.PWM->TIMx, V_Switch_HV.PWM->Channel);
 
     // V SWITCH LV INIT
-    PWM_Init(V_Switch_LV.PWM);
-    PWM_Enable(V_Switch_LV.PWM);
+    LL_TIM_OC_SetMode(V_Switch_LV.PWM->TIMx, V_Switch_LV.PWM->Channel,  LL_TIM_OCMODE_FORCED_INACTIVE);
+    LL_TIM_OC_SetPolarity(V_Switch_LV.PWM->TIMx, V_Switch_LV.PWM->Channel, LL_TIM_OCPOLARITY_HIGH);
+    LL_TIM_OC_EnablePreload(V_Switch_LV.PWM->TIMx, V_Switch_LV.PWM->Channel);
+    LL_TIM_CC_EnableChannel(V_Switch_LV.PWM->TIMx, V_Switch_LV.PWM->Channel);
+
+    LL_TIM_SetOffStates(V_Switch_HV.PWM->TIMx, LL_TIM_OSSI_ENABLE, LL_TIM_OSSR_ENABLE);
+    LL_TIM_SetOffStates(V_Switch_LV.PWM->TIMx, LL_TIM_OSSI_ENABLE, LL_TIM_OSSR_ENABLE);
+
+    LL_TIM_DisableAutomaticOutput(V_Switch_HV.PWM->TIMx);
+    LL_TIM_DisableAutomaticOutput(V_Switch_LV.PWM->TIMx);
+
+    LL_TIM_EnableAllOutputs(V_Switch_HV.PWM->TIMx);
+    LL_TIM_EnableAllOutputs(V_Switch_LV.PWM->TIMx);
+
+    LL_TIM_SetPrescaler(V_Switch_HV.PWM->TIMx, V_Switch_HV.PWM->Prescaler);
+    LL_TIM_SetPrescaler(V_Switch_LV.PWM->TIMx, V_Switch_LV.PWM->Prescaler);
+
+    LL_TIM_EnableARRPreload(V_Switch_HV.PWM->TIMx);
+    LL_TIM_EnableARRPreload(V_Switch_LV.PWM->TIMx);
+
+    LL_GPIO_ResetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
     LL_GPIO_ResetOutputPin(V_Switch_LV.Port, V_Switch_LV.Pin);
+
+    LL_TIM_DisableIT_UPDATE(V_Switch_HV.PWM->TIMx);
     LL_TIM_DisableIT_UPDATE(V_Switch_LV.PWM->TIMx);
+
+    LL_TIM_SetUpdateSource(V_Switch_HV.PWM->TIMx, LL_TIM_UPDATESOURCE_REGULAR);
+    LL_TIM_SetUpdateSource(V_Switch_LV.PWM->TIMx, LL_TIM_UPDATESOURCE_REGULAR);
+
+    LL_TIM_EnableCounter(V_Switch_HV.PWM->TIMx);
+    LL_TIM_EnableCounter(V_Switch_LV.PWM->TIMx);
 }
 
 void V_Switch_Set_Mode(V_Switch_mode SetMode)

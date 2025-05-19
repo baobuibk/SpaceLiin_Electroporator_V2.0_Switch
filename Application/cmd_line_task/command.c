@@ -26,7 +26,7 @@
 //    "> PULSE_LV_IS_NOT_SETTED\n",
 //};
 
-static uint8_t CMD_process_state = 0;
+//static uint8_t CMD_process_state = 0;
 
 static uint8_t ChannelMapping[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 static uint8_t User_Channel_Mapping[8] = {1, 2, 3, 4, 5, 6, 7, 8};

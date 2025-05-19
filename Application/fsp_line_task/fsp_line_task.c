@@ -90,7 +90,7 @@ void FSP_Line_Task(void*)
 
 			if (FSP_return == FSP_PKT_READY)
 			{
-				//g_FSP_line_return = FSP_Line_Process();
+				g_FSP_line_return = FSP_Line_Process();
 			}
 
 			if (g_FSP_line_return == 0)
