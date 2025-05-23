@@ -111,18 +111,11 @@
 /***********************************************/
 
 /**************CURRENT MONITOR*****************/
-// #define ADC_I_SENSE_HANDLE      ADC1
-// #define ADC_I_SENSE_CHANNEL     LL_ADC_CHANNEL_10
-// #define ADC_I_SENSE_IRQ         ADC_IRQn
+#define VOM_SPI_HANDLE          SPI1
+#define VOM_SPI_IRQ             SPI1_IRQn
 
-//#define I_SENSE_TIMER_HANDLE    TIM3
-
-//#define OCP_ALERT_PORT          GPIOC
-//#define OCP_ALERT_PIN           LL_GPIO_PIN_13
-
-//#define I_SENSE_RESET_PORT      GPIOA
-//#define I_SENSE_RESET_PIN       LL_GPIO_PIN_15
-#define ADC_CHANNEL_COUNT		1
+#define VOM_SPI_CS_PORT         GPIOC
+#define VOM_SPI_CS_PIN          LL_GPIO_PIN_4
 /***********************************************/
 
 /*********************UART**********************/

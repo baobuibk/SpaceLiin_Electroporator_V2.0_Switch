@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "app.h": "c"
+        "app.h": "c",
+        "stdbool.h": "c",
+        "vom_driver.h": "c",
+        "stm32f405xx.h": "c",
+        "stm32f4xx_ll_spi.h": "c",
+        "stm32f4xx_ll_gpio.h": "c",
+        "string.h": "c"
     }
 }

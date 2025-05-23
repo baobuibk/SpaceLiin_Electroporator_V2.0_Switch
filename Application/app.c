@@ -63,7 +63,7 @@ void App_Main(void)
     H_Bridge_Driver_Init();
     H_Bridge_Task_Init();
     H_Bridge_Sequence_Init();
-//     Current_Sense_Task_Init(LL_ADC_SAMPLINGTIME_15CYCLES);
+    VOM_Driver_Init();
 
     while (1)
     {

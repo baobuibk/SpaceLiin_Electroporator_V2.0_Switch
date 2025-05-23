@@ -30,8 +30,8 @@ static void fsp_print(uint8_t packet_length);
 extern uint8_t  CMD_sequence_index;
 extern uint8_t  CMD_total_sequence_index;
 
-extern bool 	is_HV_volt_available;
-extern uint32_t Current_HV_volt;
+// extern bool 	is_HV_volt_available;
+// extern uint32_t Current_HV_volt;
 
 /*
  extern double   compensated_pressure;
@@ -47,15 +47,15 @@ uint8_t FSP_Line_Process() {
 	switch (ps_FSP_RX->CMD) {
 
 	case FSP_CMD_MEASURE_VOLT: {
-		Current_HV_volt =  ps_FSP_RX->Payload.measure_volt.HV_volt[3];
-		Current_HV_volt <<= 8;
-		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[2];
-		Current_HV_volt <<= 8;
-		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[1];
-		Current_HV_volt <<= 8;
-		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[0];
+		// Current_HV_volt =  ps_FSP_RX->Payload.measure_volt.HV_volt[3];
+		// Current_HV_volt <<= 8;
+		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[2];
+		// Current_HV_volt <<= 8;
+		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[1];
+		// Current_HV_volt <<= 8;
+		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[0];
 
-		is_HV_volt_available = true;
+		// is_HV_volt_available = true;
 
 		return 1;
 	}
