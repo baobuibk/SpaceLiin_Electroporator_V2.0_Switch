@@ -312,7 +312,7 @@ void UART5_IRQHandler(void)
 void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
-  H_Bridge_TIM_6_Delay_Interupt_Handle();
+  H_Bridge_Sync_Interupt_Handle();
   /* USER CODE END TIM6_DAC_IRQn 0 */
 
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */

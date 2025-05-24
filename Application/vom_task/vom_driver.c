@@ -102,6 +102,40 @@ void VOM_Driver_Init(void)
     SPI_Read(&VOM_SPI, &SPI_frame);
 }
 
+/* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
+bool VOM_Build_ADC_CONFIG_Frame(const VOM_Trigger_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array)
+{
+    if (!config || !out_frame || !out_data_array || config->measure_mode == 0)
+    {
+        return false;
+    }
+
+    uint8_t avg = (config->avg_vsh > config->avg_vbus) ? config->avg_vsh : config->avg_vbus;
+    if (avg > 127)
+    {
+        avg = 0;
+    }
+
+    uint16_t value = 0;
+    value |= (config->measure_mode << 12); // MODE
+    value |= (config->vbus_ct      << 9);  // VBUS_CT
+    value |= (config->vsh_ct       << 6);  // VSH_CT
+    value |= (avg << 0);                   // AVG
+
+    // Build data array (MSB first)
+    out_data_array[0].data = value & 0xFF;
+    out_data_array[0].mask = 0xC7;
+    out_data_array[1].data = (value >> 8) & 0xFF;
+    out_data_array[1].mask = 0xFF;
+
+    // Fill frame
+    out_frame->addr = 0x01; // CONFIG register
+    out_frame->p_data_array = out_data_array;
+    out_frame->data_size = 2;
+
+    return true;
+}
+
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void)
 {

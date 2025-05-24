@@ -10,6 +10,32 @@
 #include "pwm.h"
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef enum
+{
+    DELAY_PULSE_SYNC_STATE,
+    ON_PULSE_SYNC_STATE,
+    OFF_PULSE_SYNC_STATE,
+} Sync_State_t;
+
+typedef struct _Sync_TIM_t_
+{
+    uint16_t Delay_PSC;
+    uint32_t Delay_ARR;
+
+    uint16_t ON_PSC;
+    uint32_t ON_ARR;
+    uint16_t set_sampling_ON_pulse_count;
+
+    uint16_t OFF_PSC;
+    uint32_t OFF_ARR;
+    uint16_t set_sampling_OFF_pulse_count;
+
+    uint16_t sampling_count;
+
+    Sync_State_t  state;
+
+} Sync_TIM_t;
+
 typedef enum _H_Bridge_mode_typedef_
 {
     H_BRIDGE_MODE_HS_ON,
@@ -24,6 +50,9 @@ typedef struct _H_Bridge_typdef_
 
     TIM_TypeDef     *TIMx;
 
+    uint16_t        Delay_Prescaler;
+    uint32_t        Delay_ARR;
+
     uint16_t        HB_Prescaler;
     uint32_t        HB_ARR;
 
@@ -33,12 +62,12 @@ typedef struct _H_Bridge_typdef_
     uint32_t        LIN_Channel;
     uint32_t        LIN_OC;
 
-    uint16_t        Delay_Prescaler;
-    uint32_t        Delay_ARR;
-
     uint16_t        pulse_count;
     uint16_t        set_pulse_count;
-}H_Bridge_typdef;
+
+    Sync_TIM_t      Sync;
+
+} H_Bridge_typdef;
 
 typedef struct _H_Bridge_Task_Data_typedef_
 {
@@ -91,7 +120,7 @@ void H_Bridge_TIM_3_Interupt_Handle(void);
 void H_Bridge_TIM_4_Interupt_Handle(void);
 void H_Bridge_TIM_5_Interupt_Handle(void);
 void H_Bridge_TIM_8_Interupt_Handle(void);
-void H_Bridge_TIM_6_Delay_Interupt_Handle(void);
+void H_Bridge_Sync_Interupt_Handle(void);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
