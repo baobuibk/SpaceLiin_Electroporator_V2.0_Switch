@@ -23,13 +23,15 @@ typedef enum
 
 typedef enum
 {
-    VOM_SHUNT_SINGLE = 0x01,
-    VOM_BUS_SINGLE   = 0x02,
+    VOM_SHUTDOWN         = 0x00,
+
+    VOM_SHUNT_SINGLE     = 0x01,
+    VOM_BUS_SINGLE       = 0x02,
     VOM_BUS_SHUNT_SINGLE = 0x03,
 
-    VOM_SHUNT_CONT = 0x09,
-    VOM_BUS_CONT   = 0x0A,
-    VOM_BUS_SHUNT_CONT = 0x0B,
+    VOM_SHUNT_CONT       = 0x09,
+    VOM_BUS_CONT         = 0x0A,
+    VOM_BUS_SHUNT_CONT   = 0x0B,
 } VOM_Measure_Mode_t;
 
 typedef struct
@@ -39,10 +41,12 @@ typedef struct
     VOM_Conv_Time_t    vbus_ct;
     uint8_t            avg_vsh;
     uint8_t            avg_vbus;
-} VOM_Trigger_Config_t;
+} VOM_Config_t;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+extern spi_stdio_typedef VOM_SPI;
+
 //extern uint16_t g_Feedback_Voltage[ADC_CHANNEL_COUNT];
 extern bool        is_Measure_Impedance;
 extern uint16_t    Current_Sense_Period;
@@ -54,7 +58,7 @@ extern uint16_t    Current_Sense_Period;
 void VOM_Driver_Init(void);
 
 /* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
-bool VOM_Build_ADC_CONFIG_Frame(const VOM_Trigger_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array);
+bool VOM_Build_ADC_CONFIG_Frame(const VOM_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array);
 
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void);

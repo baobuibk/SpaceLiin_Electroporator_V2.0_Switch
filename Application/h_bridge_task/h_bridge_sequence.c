@@ -109,7 +109,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
                                    HB_sequence_array[sequence_index].sequence_delay_ms, 
                                    HB_sequence_array[sequence_index].hv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].hv_pos_off_ms, 
-                                   HB_sequence_array[sequence_index].hv_pos_count
+                                   HB_sequence_array[sequence_index].hv_pos_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_HV_2_STATE;
@@ -131,7 +132,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
                                    HB_sequence_array[sequence_index].sequence_delay_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].hv_neg_count
+                                   HB_sequence_array[sequence_index].hv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_LV_1_STATE;
@@ -152,7 +154,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
                                    HB_sequence_array[sequence_index].sequence_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_pos_count
+                                   HB_sequence_array[sequence_index].lv_pos_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_LV_2_STATE;
@@ -173,7 +176,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
                                    HB_sequence_array[sequence_index].sequence_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_neg_count
+                                   HB_sequence_array[sequence_index].lv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_HV_1_STATE;
@@ -204,7 +208,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    HB_sequence_array[sequence_index].hv_delay_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].hv_neg_count
+                                   HB_sequence_array[sequence_index].hv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_LV_1_STATE;
@@ -225,7 +230,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_pos_count
+                                   HB_sequence_array[sequence_index].lv_pos_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_LV_2_STATE;
@@ -246,7 +252,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_neg_count
+                                   HB_sequence_array[sequence_index].lv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_HV_1_STATE;
@@ -277,7 +284,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
                                    HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_pos_count
+                                   HB_sequence_array[sequence_index].lv_pos_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_LV_2_STATE;
@@ -298,7 +306,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
                                    HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_neg_count
+                                   HB_sequence_array[sequence_index].lv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_HV_1_STATE;
@@ -329,7 +338,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_2_STATE )
                                    HB_sequence_array[sequence_index].lv_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
-                                   HB_sequence_array[sequence_index].lv_neg_count
+                                   HB_sequence_array[sequence_index].lv_neg_count,
+                                   10, 10
                                  );
 
         H_Bridge_Sequence_Process_State = H_BRIDGE_HV_1_STATE;
@@ -350,53 +360,4 @@ for (; sequence_index < SEQUENCE_MAX_INDEX; sequence_index++)
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-// static void H_Bridge_Calculate_Timing(
-//                                       H_Bridge_Task_Data_typedef* p_HB_task_data,
-//                                       V_Switch_mode               _VS_mode_,
-
-//                                       uint16_t Set_delay_time_ms, 
-//                                       uint16_t Set_on_time_ms, 
-//                                       uint16_t Set_off_time_ms, 
-//                                       uint16_t Set_pulse_count
-//                                     )
-// {
-//     p_HB_task_data->VS_mode = _VS_mode_;
-
-//     p_HB_task_data->HB_pole_ls_on.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
-//     p_HB_task_data->HB_pole_ls_on.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
-
-//     p_HB_task_data->HB_pole_pulse.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
-//     p_HB_task_data->HB_pole_pulse.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
-
-//     /* 
-//     * @brief Calculate the maximum of Set_delay_time_ms, Set_on_time_ms, and Set_off_time_ms.
-//     * @details 
-//     *   - If 'Set_delay_time_ms' is greater than 'Set_on_time_ms', check if 'Set_delay_time_ms' is also greater than 'Set_off_time_ms'.
-//     *     If true, 'Set_delay_time_ms' is the maximum; otherwise, 'Set_off_time_ms' is the maximum.
-//     *   - If 'Set_delay_time_ms' is not greater than 'Set_on_time_ms', then check if 'Set_on_time_ms' is greater than 'Set_off_time_ms'.
-//     *     If true, 'Set_on_time_ms' is the maximum; otherwise, 'Set_off_time_ms' is the maximum.
-//     */
-//     uint16_t max_time_ms =  (Set_delay_time_ms > Set_on_time_ms) ? 
-//                             ((Set_delay_time_ms > Set_off_time_ms) ? Set_delay_time_ms : Set_off_time_ms) : 
-//                             ((Set_on_time_ms > Set_off_time_ms) ? Set_on_time_ms : Set_off_time_ms);
-
-//     uint16_t min_time_ms =  (Set_on_time_ms < Set_off_time_ms) ? Set_on_time_ms : Set_off_time_ms;
-     
-//     p_HB_task_data->HB_pole_pulse.PWM.Prescaler = (((APB1_TIMER_CLK / 1000) * max_time_ms) / (UINT16_MAX)) + 1;
-//     p_HB_task_data->HB_pole_pulse.PWM.Prescaler = (p_HB_task_data->HB_pole_pulse.PWM.Prescaler > UINT16_MAX) ? UINT16_MAX : p_HB_task_data->HB_pole_pulse.PWM.Prescaler;
-
-//     p_HB_task_data->HB_pole_pulse.PWM.Duty      = ((APB1_TIMER_CLK / 1000) * min_time_ms) / (p_HB_task_data->HB_pole_pulse.PWM.Prescaler * 100);
-//     p_HB_task_data->HB_pole_pulse.PWM.Duty      = (p_HB_task_data->HB_pole_pulse.PWM.Duty > SD_DUTY_MIN) ? p_HB_task_data->HB_pole_pulse.PWM.Duty : SD_DUTY_MIN;
-
-//     p_HB_task_data->HB_pole_ls_on.PWM.Prescaler = 1;
-
-//     p_HB_task_data->HB_pole_pulse.delay_time_ms   = Set_delay_time_ms;
-//     p_HB_task_data->HB_pole_pulse.on_time_ms      = Set_on_time_ms;
-//     p_HB_task_data->HB_pole_pulse.off_time_ms     = Set_off_time_ms;
-//     p_HB_task_data->HB_pole_pulse.set_pulse_count = Set_pulse_count;
-//     p_HB_task_data->HB_pole_pulse.pulse_count     = 0;
-
-//     p_HB_task_data->is_setted                      = true;
-// }
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

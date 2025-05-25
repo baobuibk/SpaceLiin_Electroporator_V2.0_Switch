@@ -23,7 +23,7 @@
 spi_stdio_typedef VOM_SPI;
 
 SPI_TX_buffer_t g_VOM_SPI_TX_buffer[2048];
-SPI_RX_buffer_t g_VOM_SPI_RX_buffer[2048];
+SPI_RX_buffer_t g_VOM_SPI_RX_buffer[5012];
 SPI_RX_buffer_t g_VOM_temp_SPI_RX_buffer[6];
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -103,7 +103,7 @@ void VOM_Driver_Init(void)
 }
 
 /* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
-bool VOM_Build_ADC_CONFIG_Frame(const VOM_Trigger_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array)
+bool VOM_Build_ADC_CONFIG_Frame(const VOM_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array)
 {
     if (!config || !out_frame || !out_data_array || config->measure_mode == 0)
     {

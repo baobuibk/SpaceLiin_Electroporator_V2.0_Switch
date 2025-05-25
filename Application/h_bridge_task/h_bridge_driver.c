@@ -3,6 +3,7 @@
 #include "board.h"
 
 #include "h_bridge_driver.h"
+#include "vom_driver.h"
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // #define SD_DUTY_MIN \
@@ -15,6 +16,10 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn);
+
+__STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi, SPI_frame_t* p_SPI_frame);
+__STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi);
+__STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi);
 
 __STATIC_INLINE void HB_Set_Duty(PWM_TypeDef *PWMx, uint32_t _Duty, bool apply_now);
 __STATIC_INLINE void HB_Set_OC(TIM_TypeDef *TIMx, uint32_t _Channel, uint32_t _OC, bool apply_now);
@@ -146,7 +151,10 @@ void H_Bridge_Calculate_Timing(
                                uint16_t Set_delay_time_ms, 
                                uint16_t Set_on_time_ms, 
                                uint16_t Set_off_time_ms, 
-                               uint16_t Set_pulse_count
+                               uint16_t Set_pulse_count,
+
+                               uint8_t  Set_sampling_ON_pulse_count,
+                               uint8_t  Set_sampling_OFF_pulse_count
                               )
 {
     float result_temp = 0.0;
@@ -177,20 +185,32 @@ void H_Bridge_Calculate_Timing(
     p_HB_task_data->HB_pole_pulse.Sync.Delay_PSC = p_HB_task_data->HB_pole_pulse.Delay_Prescaler;
     p_HB_task_data->HB_pole_pulse.Sync.Delay_ARR = p_HB_task_data->HB_pole_pulse.Delay_ARR * 0.9;
 
-    result_temp                                  = (((APB1_TIMER_CLK / 1000.0) * (Set_on_time_ms / 10.0)) / (4369.0 + 1.0)) - 1.0;
+    result_temp                                  = (((APB1_TIMER_CLK / 1000.0) * (Set_on_time_ms / (float)Set_sampling_ON_pulse_count)) / (4369.0 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.Sync.ON_PSC    = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.Sync.ON_ARR    = 4369;
 
     uint16_t new_off_time_ms                     = (Set_off_time_ms > (Set_on_time_ms * 0.1)) ? (Set_off_time_ms - (Set_on_time_ms * 0.1)) : (Set_on_time_ms * 0.1);
-    result_temp                                  = (((APB1_TIMER_CLK / 1000.0) * (new_off_time_ms / 10.0)) / (4369.0 + 1.0)) - 1.0;
+    result_temp                                  = (((APB1_TIMER_CLK / 1000.0) * (new_off_time_ms / (float)Set_sampling_OFF_pulse_count)) / (4369.0 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.Sync.OFF_PSC   = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.Sync.OFF_ARR   = 4369;
 
     p_HB_task_data->HB_pole_pulse.Sync.sampling_count               = 0;
-    p_HB_task_data->HB_pole_pulse.Sync.set_sampling_ON_pulse_count  = 10;
-    p_HB_task_data->HB_pole_pulse.Sync.set_sampling_OFF_pulse_count = 10;
+    p_HB_task_data->HB_pole_pulse.Sync.set_sampling_ON_pulse_count  = Set_sampling_ON_pulse_count;
+    p_HB_task_data->HB_pole_pulse.Sync.set_sampling_OFF_pulse_count = Set_sampling_OFF_pulse_count;
 
     p_HB_task_data->HB_pole_pulse.Sync.state = DELAY_PULSE_SYNC_STATE;
+
+    VOM_Config_t INA229_config =
+    {
+        .measure_mode = VOM_BUS_SHUNT_CONT,
+        .vsh_ct       = CT_50US,
+        .vbus_ct      = CT_50US,
+        .avg_vsh      = 1,
+        .avg_vbus     = 1
+    };
+
+    // Tạo frame một lần duy nhất sau đó xài lại
+    VOM_Build_ADC_CONFIG_Frame(&INA229_config, &p_HB_task_data->HB_pole_pulse.ADC_Start_SPI_frame, p_HB_task_data->HB_pole_pulse.ADC_Start_SPI_data);
 }
 
 void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
@@ -338,6 +358,8 @@ void H_Bridge_Sync_Interupt_Handle(void)
             LL_TIM_ClearFlag_UPDATE(H_BRIDGE_SYNC_HANDLE);
             LL_TIM_SetCounter(H_BRIDGE_SYNC_HANDLE, 0);
 
+            VOM_SPI_Start_ADC(&VOM_SPI, &p_Current_HB_TIM_IRQn->ADC_Start_SPI_frame);
+
             p_Current_HB_TIM_IRQn->Sync.state = ON_PULSE_SYNC_STATE;
             break;
         }
@@ -345,6 +367,8 @@ void H_Bridge_Sync_Interupt_Handle(void)
         case ON_PULSE_SYNC_STATE:
         {
             p_Current_HB_TIM_IRQn->Sync.sampling_count++;
+
+            VOM_SPI_Read_ADC(&VOM_SPI);
 
             if (p_Current_HB_TIM_IRQn->Sync.sampling_count < p_Current_HB_TIM_IRQn->Sync.set_sampling_ON_pulse_count)
             {
@@ -369,6 +393,8 @@ void H_Bridge_Sync_Interupt_Handle(void)
         case OFF_PULSE_SYNC_STATE:
         {
             p_Current_HB_TIM_IRQn->Sync.sampling_count++;
+
+            VOM_SPI_Read_ADC(&VOM_SPI);
 
             if (p_Current_HB_TIM_IRQn->Sync.sampling_count < (p_Current_HB_TIM_IRQn->Sync.set_sampling_OFF_pulse_count))
             {
@@ -437,6 +463,8 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
             if (p_HB_TIM_x_IRQn->pulse_count >= (p_HB_TIM_x_IRQn->set_pulse_count + 1))
             {   
                 LL_TIM_DisableCounter(p_HB_TIM_x_IRQn->TIMx);
+
+                VOM_SPI_Stop_ADC(&VOM_SPI);
                 return;
             }
 
@@ -461,6 +489,42 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
             break;
         }
     }
+}
+
+__STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi, SPI_frame_t* p_SPI_frame)
+{
+    SPI_Write(p_spi, p_SPI_frame);
+}
+
+__STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
+{
+    SPI_frame_t SPI_frame;
+    
+    SPI_frame.addr = 0x04,
+    SPI_frame.data_size = 3,
+
+    SPI_Read(p_spi, &SPI_frame);
+
+    SPI_frame.addr = 0x05,
+    SPI_frame.data_size = 3,
+
+    SPI_Read(p_spi, &SPI_frame);
+}
+
+__STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)
+{
+    SPI_TX_data_t SPI_TX_data[2] = {0};
+    SPI_TX_data[0].mask = 0xFF;
+    SPI_TX_data[1].mask = 0xFF;
+    
+    SPI_frame_t SPI_frame =
+    {
+        .addr = 0x01,
+        .p_data_array = SPI_TX_data,
+        .data_size = 2,
+    };
+
+    SPI_Write(p_spi, &SPI_frame);
 }
 
 __STATIC_INLINE void HB_Set_Duty(PWM_TypeDef *PWMx, uint32_t _Duty, bool apply_now)

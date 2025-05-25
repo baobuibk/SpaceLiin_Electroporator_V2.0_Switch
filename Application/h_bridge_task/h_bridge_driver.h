@@ -8,6 +8,7 @@
 #include "stm32f4xx_ll_gpio.h"
 #include "v_switch_driver.h"
 #include "pwm.h"
+#include "spi.h"
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef enum
@@ -67,6 +68,9 @@ typedef struct _H_Bridge_typdef_
 
     Sync_TIM_t      Sync;
 
+    SPI_frame_t     ADC_Start_SPI_frame;
+    SPI_TX_data_t   ADC_Start_SPI_data[2];
+
 } H_Bridge_typdef;
 
 typedef struct _H_Bridge_Task_Data_typedef_
@@ -110,7 +114,10 @@ void H_Bridge_Calculate_Timing(
                                uint16_t Set_delay_time_ms, 
                                uint16_t Set_on_time_ms, 
                                uint16_t Set_off_time_ms, 
-                               uint16_t Set_pulse_count
+                               uint16_t Set_pulse_count,
+
+                               uint8_t  Set_sampling_ON_pulse_count,
+                               uint8_t  Set_sampling_OFF_pulse_count
                               );
 
 void H_Bridge_Kill(void);
