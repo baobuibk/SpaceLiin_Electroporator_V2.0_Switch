@@ -11,6 +11,14 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef enum
 {
+    VOM_HV_ON,
+    VOM_HV_OFF,
+    VOM_LV_ON,
+    VOM_LV_OFF,
+} VOM_Data_State_t;
+
+typedef enum
+{
     CT_50US   = 0x00,
     CT_84US   = 0x01,
     CT_150US  = 0x02,
@@ -48,8 +56,7 @@ typedef struct
 extern spi_stdio_typedef VOM_SPI;
 
 //extern uint16_t g_Feedback_Voltage[ADC_CHANNEL_COUNT];
-extern bool        is_Measure_Impedance;
-extern uint16_t    Current_Sense_Period;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -59,6 +66,9 @@ void VOM_Driver_Init(void);
 
 /* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
 bool VOM_Build_ADC_CONFIG_Frame(const VOM_Config_t* config, SPI_frame_t* out_frame, SPI_TX_data_t* out_data_array);
+
+/* :::::::::: VOM Data Process :::::::: */
+void VOM_Data_Process(spi_stdio_typedef* p_spi);
 
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void);

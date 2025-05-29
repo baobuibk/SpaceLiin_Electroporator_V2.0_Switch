@@ -23,8 +23,8 @@
 spi_stdio_typedef VOM_SPI;
 
 SPI_TX_buffer_t g_VOM_SPI_TX_buffer[2048];
-SPI_RX_buffer_t g_VOM_SPI_RX_buffer[5012];
-SPI_RX_buffer_t g_VOM_temp_SPI_RX_buffer[6];
+uint8_t g_VOM_SPI_RX_buffer[5012];
+uint8_t g_VOM_temp_SPI_RX_buffer[6];
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: VOM Driver Init :::::::: */
@@ -33,7 +33,7 @@ void VOM_Driver_Init(void)
     SPI_Init(&VOM_SPI, VOM_SPI_HANDLE, VOM_SPI_IRQ,
             g_VOM_temp_SPI_RX_buffer, 41,
 			g_VOM_SPI_TX_buffer, 2048,
-			g_VOM_SPI_RX_buffer, 2048,
+			g_VOM_SPI_RX_buffer, 5012,
             VOM_SPI_CS_PORT, VOM_SPI_CS_PIN);
     
     SPI_TX_data_t SPI_data_array[5] = {0};
@@ -95,11 +95,11 @@ void VOM_Driver_Init(void)
     
     SPI_Write(&VOM_SPI, &SPI_frame);
 
-    SPI_frame.addr = 0x0C;
-    SPI_frame.p_data_array = SPI_data_array;
-    SPI_frame.data_size = 2;
+    // SPI_frame.addr = 0x0C;
+    // SPI_frame.p_data_array = SPI_data_array;
+    // SPI_frame.data_size = 2;
     
-    SPI_Read(&VOM_SPI, &SPI_frame);
+    // SPI_Read(&VOM_SPI, &SPI_frame);
 }
 
 /* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
@@ -136,22 +136,77 @@ bool VOM_Build_ADC_CONFIG_Frame(const VOM_Config_t* config, SPI_frame_t* out_fra
     return true;
 }
 
+/* :::::::::: VOM Data Process :::::::: */
+void VOM_Data_Process(spi_stdio_typedef* p_spi)
+{
+    uint8_t VOM_data_size = 4;
+
+    uint8_t sequence_count = 0, task_data_count = 0, pulse_count = 0, sampling_on_count = 0, sampling_off_count = 0;
+
+    for (sequence_count = 0; (HB_Task_data[sequence_count].is_setted == true) && (sequence_count < 10); sequence_count++)
+    {
+        for (task_data_count = 0; (HB_Task_data[sequence_count].task_data[task_data_count].is_setted == true) && (task_data_count < 4); task_data_count++)
+        {
+            uint8_t VOM_on_state, VOM_off_state;
+            if ((task_data_count == 0) || (task_data_count == 1))
+            {
+                VOM_on_state = VOM_HV_ON;
+                VOM_off_state = VOM_HV_OFF;
+            }
+            else
+            {
+                VOM_on_state = VOM_LV_ON;
+                VOM_off_state = VOM_LV_OFF;
+            }
+
+            for (pulse_count = 0; pulse_count < HB_Task_data[sequence_count].task_data[task_data_count].HB_pole_pulse.set_pulse_count; pulse_count++)
+            {   
+                for (sampling_on_count = 0; sampling_on_count < 20; sampling_on_count++)
+                {
+                    p_spi->p_RX_buffer[p_spi->RX_read_index] = (p_spi->p_RX_buffer[p_spi->RX_read_index] & ~(0x03)) | (VOM_on_state & 0x03);
+
+                    for (uint8_t i = 0; i < VOM_data_size; i++)
+                    {
+                        if (SPI_RX_BUFFER_EMPTY(p_spi))
+                        {
+                            return;
+                        }
+                        
+                        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+                    }
+                }
+                
+                for (sampling_off_count = 0; sampling_off_count < 20; sampling_off_count++)
+                {
+                    p_spi->p_RX_buffer[p_spi->RX_read_index] = (p_spi->p_RX_buffer[p_spi->RX_read_index] & ~(0x03)) | (VOM_off_state & 0x03);
+
+                    for (uint8_t i = 0; i < VOM_data_size; i++)
+                    {
+                        if (SPI_RX_BUFFER_EMPTY(p_spi))
+                        {
+                            return;
+                        }
+                        
+                        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+                    }
+                }
+            }
+        }
+    }
+}
+
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void)
 {
     if (LL_SPI_IsActiveFlag_RXNE(VOM_SPI.handle) == true)
 	{
-        VOM_SPI.temp_RX_irqn_byte = LL_SPI_ReceiveData8(VOM_SPI.handle);
+        VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = LL_SPI_ReceiveData8(VOM_SPI.handle);
 
         if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].command == SPI_READ)
         {
-            VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index].data_type = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type;
-            
-            VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index].data = VOM_SPI.temp_RX_irqn_byte;
-
             if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_HEADER)
             {
-                VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index].data = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data;
+                VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data;
             }
             
             VOM_SPI.temp_RX_index++;

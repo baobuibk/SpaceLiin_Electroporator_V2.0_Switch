@@ -425,11 +425,16 @@ void H_Bridge_Sync_Interupt_Handle(void)
             return;
         }
 
-        p_Current_HB_TIM_IRQn->Sync.sampling_count = 0;
-
         LL_TIM_OC_SetMode(p_Current_HB_TIM_IRQn->TIMx, p_Current_HB_TIM_IRQn->HIN_Channel, LL_TIM_OCMODE_FORCED_INACTIVE);
         LL_TIM_OC_SetMode(p_Current_HB_TIM_IRQn->TIMx, p_Current_HB_TIM_IRQn->LIN_Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
         
+        if (p_Current_HB_TIM_IRQn->pulse_count <= p_Current_HB_TIM_IRQn->set_pulse_count)
+        {
+            return;
+        }
+
+        p_Current_HB_TIM_IRQn->Sync.sampling_count = 0;
+
         LL_TIM_DisableCounter(H_BRIDGE_SYNC_HANDLE);
         LL_TIM_SetCounter(H_BRIDGE_SYNC_HANDLE, 0);
         LL_TIM_DisableIT_UPDATE(H_BRIDGE_SYNC_HANDLE);

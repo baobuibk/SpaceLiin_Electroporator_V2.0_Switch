@@ -84,7 +84,9 @@ if(is_h_bridge_enable == false)
     ps_FSP_TX->Payload.set_pulse_control.State = 0;
     fsp_print(2);
 
-    SchedulerTaskDisable(0);
+    VOM_Data_Process(&VOM_SPI);
+
+    SchedulerTaskDisable(H_BRIDGE_TASK);
     return;
 }
 
@@ -167,7 +169,7 @@ void H_Bridge_Manual_Task(void*)
         ps_FSP_TX->Payload.set_manual_pulse.State = 0;
         fsp_print(2);
 
-        SchedulerTaskDisable(7);
+        //SchedulerTaskDisable(7);
         return;
     }
 

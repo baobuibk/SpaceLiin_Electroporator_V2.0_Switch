@@ -31,9 +31,9 @@ __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t cu
  * QUEUE_Init function to manage incoming data efficiently.
  */
 void SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
-                IRQn_Type _irqn, SPI_RX_buffer_t* _p_temp_RX_buffer,
+                IRQn_Type _irqn, uint8_t* _p_temp_RX_buffer,
                 uint16_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
-                uint16_t _TX_size, SPI_RX_buffer_t* _p_RX_buffer,
+                uint16_t _TX_size, uint8_t* _p_RX_buffer,
                 uint16_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin)
 {
     p_spi->handle  = _handle;
@@ -341,15 +341,14 @@ void SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi)
         return;
     }
 
-    p_spi->p_RX_buffer[p_spi->RX_write_index].data_type = p_spi->p_temp_RX_buffer[0].data_type;
-    p_spi->p_RX_buffer[p_spi->RX_write_index].data = p_spi->p_temp_RX_buffer[0].data;
+    //p_spi->p_RX_buffer[p_spi->RX_write_index].data_type = p_spi->p_temp_RX_buffer[0].data_type;
+    // p_spi->p_RX_buffer[p_spi->RX_write_index] = p_spi->p_temp_RX_buffer[0];
 
-    SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
+    // SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
     
-    for (int8_t Idx = (p_spi->temp_RX_index - 1); Idx >= 1; Idx--)
+    for (int8_t Idx = 0; Idx < p_spi->temp_RX_index; Idx++)
     {
-        p_spi->p_RX_buffer[p_spi->RX_write_index].data_type = p_spi->p_temp_RX_buffer[Idx].data_type;
-        p_spi->p_RX_buffer[p_spi->RX_write_index].data = p_spi->p_temp_RX_buffer[Idx].data;
+        p_spi->p_RX_buffer[p_spi->RX_write_index] = p_spi->p_temp_RX_buffer[Idx];
 
         SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
     }
@@ -414,7 +413,7 @@ __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t cu
 
     for (int8_t i = 1; i < p_spi->temp_RX_index; i++)
     {
-        current_value  = p_spi->p_temp_RX_buffer[i].data;
+        current_value  = p_spi->p_temp_RX_buffer[i];
         value          = p_spi->p_TX_buffer[SPI_get_next_buffer_index(current_TX_read_index, i, tx_buffer_size)].data;
         mask           = p_spi->p_TX_buffer[SPI_get_next_buffer_index(current_TX_read_index, i, tx_buffer_size)].mask;
         modified_value = (current_value & ~mask) | (value & mask);

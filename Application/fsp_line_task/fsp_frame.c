@@ -367,32 +367,44 @@ uint8_t FSP_Line_Process() {
         ps_FSP_TX->Payload.set_manual_pulse.State = 0;
         fsp_print(2);
 
-        SchedulerTaskDisable(7);
+        //SchedulerTaskDisable(7);
 
 		break;
 	}
 
 	// 	/* :::::::::: VOM Command :::::::: */
-	// case FSP_CMD_MEASURE_IMPEDANCE: {
-	// 	is_Measure_Impedance = true;
+	case FSP_CMD_MEASURE_IMPEDANCE:
+	{
+		is_Measure_Impedance = true;
 
-	// 	Current_Sense_Period = ps_FSP_RX->Payload.measure_impedance.Period_high;
-	// 	Current_Sense_Period = Current_Sense_Period << 8;
-	// 	Current_Sense_Period |= ps_FSP_RX->Payload.measure_impedance.Period_low;
+		Current_Sense_Period = ps_FSP_RX->Payload.measure_impedance.Period_high;
+		Current_Sense_Period = Current_Sense_Period << 8;
+		Current_Sense_Period |= ps_FSP_RX->Payload.measure_impedance.Period_low;
 
-	// 	is_h_bridge_enable = false;
+		VOM_HB_Task_data.is_setted = true;
+		H_Bridge_Set_Pole(
+                          &VOM_HB_Task_data.task_data[0].HB_pole_pulse,
+                          &VOM_HB_Task_data.task_data[0].HB_pole_ls_on,
+                          ps_FSP_RX->Payload.measure_impedance.Pos_pole_index,
+                          ps_FSP_RX->Payload.measure_impedance.Neg_pole_index
+                         );
 
-	// 	H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, ps_FSP_RX->Payload.measure_impedance.Pos_pole_index, ps_FSP_RX->Payload.measure_impedance.Neg_pole_index);
-	// 	V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
-	// 	H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
-	// 	H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+        H_Bridge_Calculate_Timing(
+                                   &VOM_HB_Task_data.task_data[0],
+                                   V_SWITCH_MODE_HV_ON,
 
-	// 	LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
-	// 	SchedulerTaskEnable(3, 1);
+                                   100, 
+                                   Current_Sense_Period, 
+                                   Current_Sense_Period, 
+                                   1,
+                                   10, 10
+                                 );
 
-	// 	UART_Send_String(&RS232_UART, "Received FSP_CMD_GET_IMPEDANCE\r\n> ");
-	// 	return 1;
-	// }
+		SchedulerTaskEnable(VOM_TASK, 1);
+
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_GET_IMPEDANCE\r\n> ");
+		return 1;
+	}
 
 	// 	/* :::::::::: I2C Sensor Command :::::::: */
 	// case FSP_CMD_GET_SENSOR_GYRO: {

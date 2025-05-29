@@ -6,6 +6,10 @@
         "stm32f405xx.h": "c",
         "stm32f4xx_ll_spi.h": "c",
         "stm32f4xx_ll_gpio.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "spi.h": "c",
+        "vom_task.h": "c",
+        "v_switch_driver.h": "c",
+        "h_bridge_driver.h": "c"
     }
 }

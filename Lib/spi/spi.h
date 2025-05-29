@@ -49,19 +49,19 @@ typedef struct
 
 } SPI_TX_buffer_t;
 
-typedef struct
-{
-    SPI_data_t      data_type;
-    uint8_t         data;
+// typedef struct
+// {
+//     SPI_data_t      data_type;
+//     uint8_t         data;
 
-} SPI_RX_buffer_t;
+// } uint8_t;
 
 typedef struct _spi_stdio_typedef
 {
     SPI_TypeDef*            handle;
     IRQn_Type		        irqn;
 
-    SPI_RX_buffer_t*        p_temp_RX_buffer;
+    uint8_t*                p_temp_RX_buffer;
 
     volatile uint16_t       temp_RX_index;
              uint16_t       temp_RX_size;
@@ -73,7 +73,7 @@ typedef struct _spi_stdio_typedef
     volatile uint16_t       TX_read_index;
              uint16_t       TX_size;
 
-    SPI_RX_buffer_t*        p_RX_buffer;
+    uint8_t*                p_RX_buffer;
 
     volatile uint16_t       RX_write_index;
     volatile uint16_t       RX_read_index;
@@ -84,9 +84,9 @@ typedef struct _spi_stdio_typedef
 } spi_stdio_typedef;
 
 void        SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
-                IRQn_Type _irqn, SPI_RX_buffer_t* _p_temp_RX_buffer,
+                IRQn_Type _irqn, uint8_t* _p_temp_RX_buffer,
                 uint16_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
-                uint16_t _TX_size, SPI_RX_buffer_t* _p_RX_buffer,
+                uint16_t _TX_size, uint8_t* _p_RX_buffer,
                 uint16_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin);
 
 void        SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
