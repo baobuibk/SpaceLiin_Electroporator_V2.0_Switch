@@ -90,7 +90,7 @@ H_Bridge_Task_typedef HB_Task_data[10];
 /* :::::::::: H Bridge Driver Init :::::::: */
 void H_Bridge_Driver_Init(void)
 {
-    for (uint8_t i = 0; i < 7; i++)
+    for (uint8_t i = 0; i < 8; i++)
     {
         LL_TIM_OC_SetMode(HB_PWM_handle_array[i], HB_PWM_channel_array[i * 2],  LL_TIM_OCMODE_FORCED_INACTIVE);
         LL_TIM_OC_SetPolarity(HB_PWM_handle_array[i], HB_PWM_channel_array[i * 2], LL_TIM_OCPOLARITY_HIGH);
