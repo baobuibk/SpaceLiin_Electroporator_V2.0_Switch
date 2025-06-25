@@ -11,6 +11,7 @@
         "vom_task.h": "c",
         "v_switch_driver.h": "c",
         "h_bridge_driver.h": "c",
-        "h_bridge_task.h": "c"
+        "h_bridge_task.h": "c",
+        "stm32f4xx_it.h": "c"
     }
 }

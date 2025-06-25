@@ -36,6 +36,9 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_MEASURE_CURRENT,
 	FSP_CMD_MEASURE_IMPEDANCE,
 
+	FSP_CMD_SET_CURRENT_LIMIT,
+	FSP_CMD_OVER_CURRENT_DETECT,
+
 	/* :::::::::: I2C Sensor Command :::::::: */
 	FSP_CMD_GET_SENSOR_GYRO,
 	FSP_CMD_GET_SENSOR_ACCEL,
@@ -194,6 +197,19 @@ typedef struct _MEASURE_IMPEDANCE_FRAME_
 
 } MEASURE_IMPEDANCE_FRAME;
 
+typedef struct _SET_CURRENT_LIMIT_FRAME_
+{
+	uint8_t		Current_A;
+	uint8_t		Current_mA;
+
+} SET_CURRENT_LIMIT_FRAME;
+
+typedef struct _OVER_CURRENT_DETECT_FRAME_
+{
+	uint8_t		OVC_signal;
+
+} OVER_CURRENT_DETECT_FRAME;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ I2C Sensor Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _GET_SENSOR_GYRO_
 {
@@ -294,6 +310,9 @@ typedef union _FSP_Payload_Frame_typedef_
 	MEASURE_VOLT_FRAME						measure_volt;
 	MEASURE_CURRENT_FRAME					measure_current;
 	MEASURE_IMPEDANCE_FRAME					measure_impedance;
+
+	SET_CURRENT_LIMIT_FRAME					set_current_limit;
+	OVER_CURRENT_DETECT_FRAME				ovc_current_detect;
 
 	/* :::::::::: I2C Sensor Command :::::::: */
 	GET_SENSOR_GYRO							get_sensor_gyro;

@@ -74,6 +74,7 @@ if(is_h_bridge_enable == false)
 
     H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+
     LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
     current_HB_Task_data_index  = 0;
@@ -200,6 +201,9 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
     {
         ps_current_HB_timing_data = &ps_current_HB_Task_data->task_data[current_HB_timing_data_index];
 
+        HB_pos_pole = ps_current_HB_Task_data->task_data[current_HB_timing_data_index].HB_pole_pulse;
+        HB_neg_pole = ps_current_HB_Task_data->task_data[current_HB_timing_data_index].HB_pole_ls_on;
+
         return 1;
     }
     
@@ -229,6 +233,9 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
 
     ps_current_HB_Task_data    = &HB_Task_data[current_HB_Task_data_index];
     ps_current_HB_timing_data  = &ps_current_HB_Task_data->task_data[current_HB_timing_data_index];
+
+    HB_pos_pole = ps_current_HB_Task_data->task_data[current_HB_timing_data_index].HB_pole_pulse;
+    HB_neg_pole = ps_current_HB_Task_data->task_data[current_HB_timing_data_index].HB_pole_ls_on;
     
     return 1;
 }

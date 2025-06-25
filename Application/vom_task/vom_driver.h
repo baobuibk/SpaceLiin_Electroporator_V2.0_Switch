@@ -70,8 +70,15 @@ bool VOM_Build_ADC_CONFIG_Frame(const VOM_Config_t* config, SPI_frame_t* out_fra
 /* :::::::::: VOM Data Process :::::::: */
 void VOM_Data_Process(spi_stdio_typedef* p_spi);
 
+void VOM_Shunt_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float current_A);
+void VOM_Shunt_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float current_A);
+
+void VOM_Bus_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float volt_A);
+void VOM_Bus_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float volt_A);
+
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void);
+void VOM_OVC_IRQHandler(void);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

@@ -43,22 +43,10 @@ extern uint8_t  CMD_total_sequence_index;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 uint8_t hs_relay_pole, ls_relay_pole, relay_state;
-uint8_t FSP_Line_Process() {
-	switch (ps_FSP_RX->CMD) {
-
-	case FSP_CMD_MEASURE_VOLT: {
-		// Current_HV_volt =  ps_FSP_RX->Payload.measure_volt.HV_volt[3];
-		// Current_HV_volt <<= 8;
-		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[2];
-		// Current_HV_volt <<= 8;
-		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[1];
-		// Current_HV_volt <<= 8;
-		// Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[0];
-
-		// is_HV_volt_available = true;
-
-		return 1;
-	}
+uint8_t FSP_Line_Process()
+{
+	switch (ps_FSP_RX->CMD)
+	{
 
 	/* :::::::::: Pulse Control Command :::::::: */
 	case FSP_CMD_SET_SEQUENCE_INDEX: {
@@ -254,36 +242,6 @@ uint8_t FSP_Line_Process() {
 		return 1;
 	}
 
-	// 	/* :::::::::: Auto Accel Command :::::::: */
-	// case FSP_CMD_SET_AUTO_ACCEL:
-	// 	if(ps_FSP_RX->Payload.set_auto_accel.State)
-	// 		Enable_Auto_Pulsing();
-	// 	else
-	// 		Disable_Auto_Pulsing();
-	// 	break;
-
-	// case FSP_CMD_SET_THRESHOLD_ACCEL:
-	// 	Threshold_Accel.x = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.XH << 8) |
-	// 	                              ps_FSP_RX->Payload.set_threshold_accel.XL);
-	// 	Threshold_Accel.y = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.YH << 8) |
-	// 	                              ps_FSP_RX->Payload.set_threshold_accel.YL);
-	// 	Threshold_Accel.z = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.ZH << 8) |
-	// 	                              ps_FSP_RX->Payload.set_threshold_accel.ZL);
-
-	// 	break;
-
-	// case FSP_CMD_GET_THRESHOLD_ACCEL:
-	// 	ps_FSP_TX->CMD = FSP_CMD_GET_THRESHOLD_ACCEL;
-	// 	ps_FSP_TX->Payload.get_threshold_accel.XL = (uint8_t)(Threshold_Accel.x & 0xFF);
-	// 	ps_FSP_TX->Payload.get_threshold_accel.XH = (uint8_t)((Threshold_Accel.x >> 8) & 0xFF);
-	// 	ps_FSP_TX->Payload.get_threshold_accel.YL = (uint8_t)(Threshold_Accel.y & 0xFF);
-	// 	ps_FSP_TX->Payload.get_threshold_accel.YH = (uint8_t)((Threshold_Accel.y >> 8) & 0xFF);
-	// 	ps_FSP_TX->Payload.get_threshold_accel.ZL = (uint8_t)(Threshold_Accel.z & 0xFF);
-	// 	ps_FSP_TX->Payload.get_threshold_accel.ZH = (uint8_t)((Threshold_Accel.z >> 8) & 0xFF);
-
-	// 	fsp_print(7);
-	// 	break;
-
 		/* :::::::::: Set Pulse Manual Command :::::::: */
 	case FSP_CMD_SET_MANUAL_POLE:
 	{
@@ -406,281 +364,18 @@ uint8_t FSP_Line_Process() {
 		return 1;
 	}
 
-	// 	/* :::::::::: I2C Sensor Command :::::::: */
-	// case FSP_CMD_GET_SENSOR_GYRO: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_GYRO);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
+	case FSP_CMD_SET_CURRENT_LIMIT:
+	{
+		float current_threshold = 0.0;
 
-	// 	case 1: {
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
+		current_threshold  = (float)ps_FSP_RX->Payload.set_current_limit.Current_A;
+		current_threshold += (float)ps_FSP_RX->Payload.set_current_limit.Current_mA / 1000.0;
 
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_GYRO;
+		VOM_Shunt_Overvoltage_Threshold(&VOM_SPI, current_threshold);
 
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.x,
-	// 				ps_FSP_TX->Payload.get_sensor_gyro.gyro_x, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.y,
-	// 				ps_FSP_TX->Payload.get_sensor_gyro.gyro_y, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.z,
-	// 				ps_FSP_TX->Payload.get_sensor_gyro.gyro_z, 2);
-
-	// 		fsp_print(7);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_ACCEL: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_ACCEL);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1: {
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_ACCEL;
-
-	// 		convert_Integer_To_Bytes(Sensor_Accel.x,
-	// 				ps_FSP_TX->Payload.get_sensor_accel.accel_x, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Accel.y,
-	// 				ps_FSP_TX->Payload.get_sensor_accel.accel_y, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Accel.z,
-	// 				ps_FSP_TX->Payload.get_sensor_accel.accel_z, 2);
-
-	// 		fsp_print(7);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_LSM6DSOX: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_LSM6DSOX);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1: {
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_LSM6DSOX;
-
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.x,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_x, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.y,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_y, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Gyro.z,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_z, 2);
-
-	// 		convert_Integer_To_Bytes(Sensor_Accel.x,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_x, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Accel.y,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_y, 2);
-	// 		convert_Integer_To_Bytes(Sensor_Accel.z,
-	// 				ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_z, 2);
-
-	// 		fsp_print(13);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_TEMP: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_TEMP);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1:
-	// 	{
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_TEMP;
-
-	// 		double_to_string(Sensor_Temp,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_temp.temp, 2);
-
-	// 		fsp_print(7);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_PRESSURE: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_PRESSURE);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1:
-	// 	{
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_PRESSURE;
-
-	// 		double_to_string(Sensor_Pressure,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_pressure.pressure, 0);
-
-	// 		fsp_print(8);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_ALTITUDE: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_ALTITUDE);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1:
-	// 	{
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_ALTITUDE;
-
-	// 		double_to_string(Sensor_Altitude,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_altitude.altitude, 2);
-
-	// 		fsp_print(5);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_BMP390: {
-	// 	switch (FSP_process_state) {
-	// 	case 0: {
-	// 		Sensor_Read_Value(SENSOR_READ_BMP390);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1:
-	// 	{
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_BMP390;
-
-	// 		double_to_string(Sensor_Temp,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_BMP390.temp, 2);
-	// 		double_to_string(Sensor_Pressure,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_BMP390.pressure, 0);
-	// 		double_to_string(Sensor_Altitude,
-	// 				(char*) ps_FSP_TX->Payload.get_sensor_BMP390.altitude, 2);
-
-	// 		fsp_print(18);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
-
-	// case FSP_CMD_GET_SENSOR_H3LIS331DL:
-	// {
-	// 	switch (FSP_process_state)
-	// 	{
-	// 	case 0:
-	// 	{
-	// 		Sensor_Read_Value(SENSOR_READ_H3LIS331DL);
-	// 		FSP_process_state = 1;
-	// 		return 0;
-	// 	}
-
-	// 	case 1:
-	// 	{
-	// 		if (Is_Sensor_Read_Complete() == false)
-	// 		{
-	// 			return 0;
-	// 		}
-
-	// 		ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_H3LIS331DL;
-
-	// 		convert_Integer_To_Bytes(H3LIS_Accel.x,
-	// 				ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_x, 3);
-	// 		convert_Integer_To_Bytes(H3LIS_Accel.y,
-	// 				ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_y, 3);
-	// 		convert_Integer_To_Bytes(H3LIS_Accel.z,
-	// 				ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_z, 3);
-
-	// 		fsp_print(10);
-	// 		FSP_process_state = 0;
-	// 		return 1;
-	// 	}
-
-	// 	default:
-	// 		break;
-	// 	}
-	// 	return 0;
-	// }
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_CURRENT_LIMIT\r\n> ");
+		return 1;
+	}
 
 		/* :::::::::: Ultility Command :::::::: */
 	case FSP_CMD_HANDSHAKE: {
