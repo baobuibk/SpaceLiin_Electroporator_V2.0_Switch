@@ -17,8 +17,6 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Private Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-static void fsp_print(uint8_t packet_length);
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 spi_stdio_typedef VOM_SPI;
 
@@ -57,6 +55,17 @@ void VOM_Driver_Init(void)
     VOM_Bus_Overvoltage_Threshold(&VOM_SPI, 306.0);
 
     VOM_Bus_Undervoltage_Threshold(&VOM_SPI, 0.0);
+
+    SPI_data_array[0].data = 0b00000000;
+    SPI_data_array[0].mask = 0x00;
+    SPI_data_array[1].data = 0b10000000;
+    SPI_data_array[1].mask = 0xFF;
+
+    SPI_frame.addr = 0x0B;
+    SPI_frame.data_size = 2;
+    SPI_frame.p_data_array = SPI_data_array;
+    
+    SPI_Write(&VOM_SPI, &SPI_frame);
 }
 
 /* :::::::::: VOM Build ADC_CONFIG Frame :::::::: */
@@ -150,6 +159,16 @@ void VOM_Data_Process(spi_stdio_typedef* p_spi)
             }
         }
     }
+}
+
+void VOM_Reset_OVC_Flag(spi_stdio_typedef* p_spi)
+{
+    SPI_frame_t SPI_frame;
+    
+    SPI_frame.addr = 0x0B,
+    SPI_frame.data_size = 2,
+
+    SPI_Read(p_spi, &SPI_frame);
 }
 
 void VOM_Shunt_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float current_A)
@@ -283,37 +302,5 @@ void VOM_driver_SPI_IRQHandler(void)
     }
 }
 
-void VOM_OVC_IRQHandler(void)
-{
-    V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
-
-    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
-    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
-    LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
-
-    UART_Send_String(&RS232_UART, "OVER CURRENT DETECTED\n> ");
-    
-    ps_FSP_TX->CMD            = FSP_CMD_OVER_CURRENT_DETECT;
-    ps_FSP_TX->Payload.ovc_current_detect.OVC_signal = true;
-    fsp_print(2);
-}
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-static void fsp_print(uint8_t packet_length)
-{
-	s_FSP_TX_Packet.sod     = FSP_PKT_SOD;
-	s_FSP_TX_Packet.src_adr = fsp_my_adr;
-	s_FSP_TX_Packet.dst_adr = FSP_ADR_GPC;
-	s_FSP_TX_Packet.length  = packet_length;
-	s_FSP_TX_Packet.type    = FSP_PKT_TYPE_CMD_W_DATA;
-	s_FSP_TX_Packet.eof     = FSP_PKT_EOF;
-	s_FSP_TX_Packet.crc16   = crc16_CCITT(FSP_CRC16_INITIAL_VALUE, &s_FSP_TX_Packet.src_adr, s_FSP_TX_Packet.length + 4);
-
-	uint8_t encoded_frame[10] = { 0 };
-	uint8_t frame_len;
-	fsp_encode(&s_FSP_TX_Packet, encoded_frame, &frame_len);
-
-	UART_FSP(&GPC_UART, (char*) encoded_frame, frame_len);
-}
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

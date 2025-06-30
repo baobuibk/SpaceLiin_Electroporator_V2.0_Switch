@@ -377,8 +377,16 @@ uint8_t FSP_Line_Process()
 		return 1;
 	}
 
+	case FSP_CMD_OVER_CURRENT_DETECT:
+	{
+		OVC_flag_signal = false;
+
+		return 1;
+	}
+
 		/* :::::::::: Ultility Command :::::::: */
-	case FSP_CMD_HANDSHAKE: {
+	case FSP_CMD_HANDSHAKE:
+	{
 		ps_FSP_TX->CMD = FSP_CMD_HANDSHAKE;
 		ps_FSP_TX->Payload.handshake.Check = 0xAB;
 

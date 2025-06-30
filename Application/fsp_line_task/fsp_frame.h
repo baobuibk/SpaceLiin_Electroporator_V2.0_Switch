@@ -206,7 +206,8 @@ typedef struct _SET_CURRENT_LIMIT_FRAME_
 
 typedef struct _OVER_CURRENT_DETECT_FRAME_
 {
-	uint8_t		OVC_signal;
+	uint8_t		OVC_flag_signal;
+	uint8_t		is_OVC_flag_reset;
 
 } OVER_CURRENT_DETECT_FRAME;
 

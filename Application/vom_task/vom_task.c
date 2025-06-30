@@ -1,7 +1,9 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Include~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+#include "app.h"
+
 #include "vom_task.h"
 
-#include "app.h"
+#include "crc.h"
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -16,12 +18,22 @@ typedef enum
     VOM_CALCULATE_IMPEDANCE,
 } VOM_State_t;
 
+typedef enum
+{
+    VOM_OVC_FIRST_SIGNAL,
+    VOM_OVC_RESET_ACTION,
+    VOM_OVC_WAIT_FOR_RESET,
+} VOM_OVC_State_t;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static VOM_State_t VOM_State = VOM_INITIAL_SET_STATE;
+static VOM_OVC_State_t VOM_OVC_State = VOM_OVC_FIRST_SIGNAL;
+
+//static bool is_OVC_signal_elapse = false;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi);
-static uint32_t Convert_2_complement_to_unsign(int32_t val);
+//static uint32_t Convert_2_complement_to_unsign(int32_t val);
 static void fsp_print(uint8_t packet_length);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -29,6 +41,9 @@ bool is_Measure_Impedance = false;
 uint16_t Current_Sense_Period = 100;
 
 H_Bridge_Task_typedef VOM_HB_Task_data;
+
+bool OVC_flag_signal   = false;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: VOM Task :::::::: */
 void VOM_Task(void*)
@@ -88,6 +103,80 @@ void VOM_Task(void*)
     default:
         break;
     }
+}
+
+void VOM_OVC_Task(void*)
+{
+    switch (VOM_OVC_State)
+    {
+    case VOM_OVC_FIRST_SIGNAL:
+    {
+        if (OVC_flag_signal == false)
+        {
+            return;
+        }
+
+        VOM_OVC_State = VOM_OVC_RESET_ACTION;
+
+        break;
+    }
+        
+    case VOM_OVC_RESET_ACTION:
+    {
+        if (LL_GPIO_IsInputPinSet(VOM_OVC_PORT, VOM_OVC_PIN) == SET)
+        {
+            OVC_flag_signal = false;
+
+            VOM_OVC_State = VOM_OVC_FIRST_SIGNAL;
+
+            break;
+        }
+        
+        V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+
+        H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+        H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+        LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+        UART_Send_String(&RS232_UART, "OVER CURRENT DETECTED\n> ");
+        
+        ps_FSP_TX->CMD                 = FSP_CMD_OVER_CURRENT_DETECT;
+        ps_FSP_TX->Payload.ovc_current_detect.OVC_flag_signal = true;
+        fsp_print(2);
+
+        SchedulerTaskDisable(H_BRIDGE_TASK);
+
+        VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+
+        break;
+    }
+
+    case VOM_OVC_WAIT_FOR_RESET:
+    {
+        if (OVC_flag_signal == true)
+        {
+            return;
+        }
+
+        VOM_Reset_OVC_Flag(&VOM_SPI);
+        
+        UART_Send_String(&RS232_UART, "OVER CURRENT FLAG RESET\n> ");
+
+        SchedulerTaskEnable(H_BRIDGE_TASK, true);
+
+        VOM_OVC_State = VOM_OVC_FIRST_SIGNAL;
+
+        break;
+    }
+    
+    default:
+        break;
+    }
+}
+
+void VOM_OVC_IRQHandler(void)
+{
+    OVC_flag_signal = true;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -163,22 +252,22 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
     fsp_print(7);
 }
 
-static uint32_t Convert_2_complement_to_unsign(int32_t val)
-{
-    // Giới hạn giá trị trong khoảng 24-bit 2's complement: [-8388608, +8388607]
-    if (val >  8388607)
-    {
-        val =  8388607;
-    }
-    
-    if (val < -8388608)
-    {
-        val = -8388608;
-    }
-
-    // Mask chỉ lấy 24-bit thấp nhất
-    return (((uint32_t)val) & 0xFFFFFF);
-}
+//static uint32_t Convert_2_complement_to_unsign(int32_t val)
+//{
+//    // Giới hạn giá trị trong khoảng 24-bit 2's complement: [-8388608, +8388607]
+//    if (val >  8388607)
+//    {
+//        val =  8388607;
+//    }
+//
+//    if (val < -8388608)
+//    {
+//        val = -8388608;
+//    }
+//
+//    // Mask chỉ lấy 24-bit thấp nhất
+//    return (((uint32_t)val) & 0xFFFFFF);
+//}
 
 static void fsp_print(uint8_t packet_length)
 {

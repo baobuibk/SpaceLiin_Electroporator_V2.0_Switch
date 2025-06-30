@@ -116,6 +116,9 @@
 
 #define VOM_SPI_CS_PORT         GPIOC
 #define VOM_SPI_CS_PIN          LL_GPIO_PIN_4
+
+#define VOM_OVC_PORT            GPIOC
+#define VOM_OVC_PIN             LL_GPIO_PIN_10
 /***********************************************/
 
 /*********************UART**********************/
