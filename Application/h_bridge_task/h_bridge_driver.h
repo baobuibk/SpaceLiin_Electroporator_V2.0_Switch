@@ -44,14 +44,24 @@ typedef struct _H_Bridge_typdef_
     uint32_t        LIN_Channel;
     uint32_t        LIN_OC;
 
-    uint16_t        pulse_count;
-    uint16_t        set_pulse_count;
+    volatile uint16_t        pulse_count;
+    volatile uint16_t        set_pulse_count;
 
     uint16_t        Deadtime_Delay_Prescaler;
     uint32_t        Deadtime_Delay_ARR;
 
     uint16_t        Deadtime_Pulse_Prescaler;
     uint32_t        Deadtime_Pulse_ARR;
+
+    uint16_t        VOM_On_Timer_Prescaler;
+    uint32_t        VOM_On_Timer_ARR;
+
+    uint16_t        VOM_Off_Timer_Prescaler;
+    uint32_t        VOM_Off_Timer_ARR;
+
+    volatile uint8_t         VOM_count;
+    volatile uint8_t         set_VOM_On_count;
+    volatile uint8_t         set_VOM_Off_count;
 
     SPI_frame_t     ADC_Start_SPI_frame;
     SPI_TX_data_t   ADC_Start_SPI_data[2];
@@ -113,6 +123,7 @@ void H_Bridge_TIM_4_Interupt_Handle(void);
 void H_Bridge_TIM_5_Interupt_Handle(void);
 void H_Bridge_TIM_8_Interupt_Handle(void);
 void H_Bridge_Deadtime_IRQn_Handle(void);
+void H_Bridge_VOM_Timer_IRQn_Handle(void);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
