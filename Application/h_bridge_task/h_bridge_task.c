@@ -130,6 +130,7 @@ case H_BRIDGE_INITIAL_SET_STATE:
 case H_BRIDGE_CHECK_PULSE_STATE:
 {
     // if(ps_current_HB_timing_data->HB_pole_pulse.pulse_count < ((ps_current_HB_timing_data->HB_pole_pulse.set_pulse_count * 2) + 1))
+	// if(ps_current_HB_timing_data->HB_pole_pulse.pulse_count < (ps_current_HB_timing_data->HB_pole_pulse.set_pulse_count + 2))
     if(ps_current_HB_timing_data->HB_pole_pulse.pulse_count < (ps_current_HB_timing_data->HB_pole_pulse.set_pulse_count + 1))
     {
         break;

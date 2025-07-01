@@ -92,7 +92,7 @@
 #define H_BRIDGE_LIN_7_CHANNEL  LL_TIM_CHANNEL_CH3
 
 // H_BRIDGE_DELAY
-#define H_BRIDGE_SYNC_HANDLE   TIM6
+#define H_BRIDGE_DEADTIME_HANDLE   TIM6
 
 /***********************************************/
 
