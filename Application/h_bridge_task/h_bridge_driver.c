@@ -119,7 +119,6 @@ void H_Bridge_Driver_Init(void)
         LL_TIM_DisableCounter(HB_PWM_handle_array[i]);
     }
 
-    // H BRIDGE DEADTIME
     LL_TIM_DisableCounter(H_BRIDGE_DEADTIME_HANDLE);
     LL_TIM_DisableIT_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
     LL_TIM_SetCounter(H_BRIDGE_DEADTIME_HANDLE, 0);
@@ -130,18 +129,6 @@ void H_Bridge_Driver_Init(void)
     LL_TIM_SetUpdateSource(H_BRIDGE_DEADTIME_HANDLE, LL_TIM_UPDATESOURCE_COUNTER);
     LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
     LL_TIM_ClearFlag_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
-
-    // H BRIDGE VOM SPI TIMER
-    // LL_TIM_DisableCounter(H_BRIDGE_VOM_TIMER_HANDLE);
-    // LL_TIM_DisableIT_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
-    // LL_TIM_SetCounter(H_BRIDGE_VOM_TIMER_HANDLE, 0);
-
-    // LL_TIM_SetPrescaler(H_BRIDGE_VOM_TIMER_HANDLE, 1199);
-    // LL_TIM_EnableARRPreload(H_BRIDGE_VOM_TIMER_HANDLE);
-
-    // LL_TIM_SetUpdateSource(H_BRIDGE_VOM_TIMER_HANDLE, LL_TIM_UPDATESOURCE_COUNTER);
-    // LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
-    // LL_TIM_ClearFlag_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
 }
 
 void H_Bridge_Set_Pole(H_Bridge_typdef* p_HB_pos_pole, H_Bridge_typdef* p_HB_neg_pole, uint8_t pos_pole_index, uint8_t neg_pole_index)
@@ -171,7 +158,7 @@ void H_Bridge_Calculate_Timing(
                               )
 {
     float result_temp = 0.0;
-    float float_time_temp = 0.0;
+    float off_time_temp = 0.0;
     p_HB_task_data->VS_mode = _VS_mode_;
 
     result_temp                                   = (((APB1_TIMER_CLK / 1000.0) * Set_delay_time_ms) / (2399 + 1.0)) - 1.0;
@@ -186,8 +173,8 @@ void H_Bridge_Calculate_Timing(
     result_temp                                 = ((APB1_TIMER_CLK / 1000.0) * Set_on_time_ms) / (p_HB_task_data->HB_pole_pulse.HB_Prescaler + 1.0);
     p_HB_task_data->HB_pole_pulse.HIN_OC        = (uint32_t)(result_temp + 0.5f);
 
-    float_time_temp                             = (float)Set_on_time_ms + (0.05 * (float)Set_off_time_ms);
-    result_temp                                 = ((APB1_TIMER_CLK / 1000.0) * float_time_temp) / (p_HB_task_data->HB_pole_pulse.HB_Prescaler + 1.0);
+    off_time_temp                               = (float)Set_on_time_ms + (0.05 * (float)Set_off_time_ms);
+    result_temp                                 = ((APB1_TIMER_CLK / 1000.0) * off_time_temp) / (p_HB_task_data->HB_pole_pulse.HB_Prescaler + 1.0);
     p_HB_task_data->HB_pole_pulse.LIN_OC        = (uint32_t)(result_temp + 0.5f);
 
     p_HB_task_data->HB_pole_ls_on.HB_Prescaler = 1;
@@ -197,24 +184,15 @@ void H_Bridge_Calculate_Timing(
 
     p_HB_task_data->is_setted = true;
 
-    float_time_temp                                         = (float)Set_delay_time_ms - (0.05 * (float)Set_off_time_ms);
-    result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * float_time_temp) / (2399 + 1.0)) - 1.0;
+    off_time_temp                                           = (float)Set_delay_time_ms - (0.05 * (float)Set_off_time_ms);
+    result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * off_time_temp) / (2399 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.Deadtime_Delay_Prescaler  = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.Deadtime_Delay_ARR        = 2399;
 
-    float_time_temp                                         = (float)Set_on_time_ms / (float)Set_sampling_ON_pulse_count;
-    result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * float_time_temp) / (2399 + 1.0)) - 1.0;
+    off_time_temp                                           = (float)Set_on_time_ms + (0.95 * (float)Set_off_time_ms);
+    result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * off_time_temp) / (2399 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.Deadtime_Pulse_Prescaler  = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.Deadtime_Pulse_ARR        = 2399;
-
-    float_time_temp                                         = (float)Set_off_time_ms / (float)Set_sampling_OFF_pulse_count;
-    result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * float_time_temp) / (2399 + 1.0)) - 1.0;
-    p_HB_task_data->HB_pole_pulse.VOM_On_Timer_Prescaler    = (uint16_t)(result_temp + 0.5f);
-    p_HB_task_data->HB_pole_pulse.VOM_On_Timer_ARR          = 2399;
-
-    p_HB_task_data->HB_pole_pulse.set_VOM_On_count  = Set_sampling_ON_pulse_count;
-    p_HB_task_data->HB_pole_pulse.set_VOM_Off_count = Set_sampling_OFF_pulse_count + Set_sampling_ON_pulse_count;
-    p_HB_task_data->HB_pole_pulse.VOM_count         = 0;
 
     VOM_Config_t INA229_config =
     {
@@ -296,13 +274,6 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
 
         LL_TIM_EnableCounter(H_BRIDGE_DEADTIME_HANDLE);
         LL_TIM_EnableIT_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
-
-        // VOM timer
-        // LL_TIM_SetPrescaler(H_BRIDGE_VOM_TIMER_HANDLE, H_Bridge_x->VOM_On_Timer_Prescaler);
-        // LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
-        // HB_Set_ARR(H_BRIDGE_VOM_TIMER_HANDLE, H_Bridge_x->VOM_On_Timer_ARR, 1);
-
-        // LL_TIM_ClearFlag_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
 
         break;
     case H_BRIDGE_MODE_HS_ON:
@@ -406,39 +377,6 @@ void H_Bridge_Deadtime_IRQn_Handle(void)
     }
 }
 
-void H_Bridge_VOM_Timer_IRQn_Handle(void)
-{
-    if(LL_TIM_IsActiveFlag_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE) == true)
-    {
-        LL_TIM_ClearFlag_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
-
-        p_Current_HB_TIM_IRQn->VOM_count++;
-
-        if (p_Current_HB_TIM_IRQn->VOM_count < (p_Current_HB_TIM_IRQn->set_VOM_On_count - 1))
-        {
-            LL_TIM_SetPrescaler(H_BRIDGE_VOM_TIMER_HANDLE, p_Current_HB_TIM_IRQn->VOM_Off_Timer_Prescaler);
-            HB_Set_ARR(H_BRIDGE_VOM_TIMER_HANDLE, p_Current_HB_TIM_IRQn->VOM_Off_Timer_ARR, 0);
-
-            return;
-        }
-
-        if (p_Current_HB_TIM_IRQn->VOM_count < (p_Current_HB_TIM_IRQn->set_VOM_Off_count - 1))
-        {
-            LL_TIM_SetPrescaler(H_BRIDGE_VOM_TIMER_HANDLE, p_Current_HB_TIM_IRQn->VOM_On_Timer_Prescaler);
-            HB_Set_ARR(H_BRIDGE_VOM_TIMER_HANDLE, p_Current_HB_TIM_IRQn->VOM_On_Timer_ARR, 0);
-
-            return;
-        }
-
-        if (p_Current_HB_TIM_IRQn->VOM_count < p_Current_HB_TIM_IRQn->set_VOM_Off_count)
-        {
-            p_Current_HB_TIM_IRQn->VOM_count = 0;
-        }
-        
-        VOM_SPI_Read_ADC(&VOM_SPI);
-    }
-}
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
 {
@@ -449,15 +387,30 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
         switch (p_HB_TIM_x_IRQn->Mode)
         {
         case H_BRIDGE_MODE_PULSE:
-        {
             p_HB_TIM_x_IRQn->pulse_count++;
 
+            // pulse_count = 1 is after pulse_delay, this will setup the
+            // LIN channel and the delay channel.
+            // if (p_HB_TIM_x_IRQn->pulse_count == 1)
+            // {
+            //     // LL_TIM_OC_SetMode(p_HB_TIM_x_IRQn->TIMx, p_HB_TIM_x_IRQn->HIN_Channel, LL_TIM_OCMODE_PWM1);
+            //     // LL_TIM_OC_SetMode(p_HB_TIM_x_IRQn->TIMx, p_HB_TIM_x_IRQn->LIN_Channel, LL_TIM_OCMODE_PWM2);
+
+            //     // Reinit the deadtime timer
+            //     LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
+            //     LL_TIM_ClearFlag_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
+            //     LL_TIM_EnableCounter(H_BRIDGE_DEADTIME_HANDLE);
+            //     LL_TIM_EnableIT_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
+            //     return;
+            // }
+
+            // if (p_HB_TIM_x_IRQn->pulse_count >= (p_HB_TIM_x_IRQn->set_pulse_count + 2))
             if (p_HB_TIM_x_IRQn->pulse_count >= (p_HB_TIM_x_IRQn->set_pulse_count + 1))
             {   
                 LL_TIM_DisableCounter(p_HB_TIM_x_IRQn->TIMx);
                 LL_TIM_SetCounter(p_HB_TIM_x_IRQn->TIMx, 0);
 
-                // VOM_SPI_Stop_ADC(&VOM_SPI);
+                //VOM_SPI_Stop_ADC(&VOM_SPI);
                 return;
             }
 
@@ -466,25 +419,15 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
 
             // Reinit the deadtime timer at the start of the puse
             LL_TIM_EnableCounter(H_BRIDGE_DEADTIME_HANDLE);
-
-            // if (p_HB_TIM_x_IRQn->pulse_count == 1)
-            // {   
-            //     VOM_SPI_Start_ADC(&VOM_SPI, &p_HB_TIM_x_IRQn->ADC_Start_SPI_frame);
-
-            //     LL_TIM_EnableCounter(H_BRIDGE_VOM_TIMER_HANDLE);
-            //     LL_TIM_EnableIT_UPDATE(H_BRIDGE_VOM_TIMER_HANDLE);
-            // }
-
             return;
-        }
 
+            break;
         case H_BRIDGE_MODE_HS_ON:
         case H_BRIDGE_MODE_LS_ON:
         case H_BRIDGE_MODE_FLOAT:
-        {
+            
             LL_TIM_DisableIT_UPDATE(p_HB_TIM_x_IRQn->TIMx);
             break;
-        }   
         
         default:
             break;
