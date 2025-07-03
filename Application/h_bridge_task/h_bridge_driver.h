@@ -18,25 +18,6 @@ typedef enum
     OFF_PULSE_SYNC_STATE,
 } Sync_State_t;
 
-typedef struct _Sync_TIM_t_
-{
-    uint16_t Delay_PSC;
-    uint32_t Delay_ARR;
-
-    uint16_t ON_PSC;
-    uint32_t ON_ARR;
-    uint16_t set_sampling_ON_pulse_count;
-
-    uint16_t OFF_PSC;
-    uint32_t OFF_ARR;
-    uint16_t set_sampling_OFF_pulse_count;
-
-    uint16_t sampling_count;
-
-    Sync_State_t  state;
-
-} Sync_TIM_t;
-
 typedef enum _H_Bridge_mode_typedef_
 {
     H_BRIDGE_MODE_HS_ON,
@@ -66,7 +47,11 @@ typedef struct _H_Bridge_typdef_
     uint16_t        pulse_count;
     uint16_t        set_pulse_count;
 
-    Sync_TIM_t      Sync;
+    uint16_t        Deadtime_Delay_Prescaler;
+    uint32_t        Deadtime_Delay_ARR;
+
+    uint16_t        Deadtime_Pulse_Prescaler;
+    uint32_t        Deadtime_Pulse_ARR;
 
     SPI_frame_t     ADC_Start_SPI_frame;
     SPI_TX_data_t   ADC_Start_SPI_data[2];
@@ -127,7 +112,7 @@ void H_Bridge_TIM_3_Interupt_Handle(void);
 void H_Bridge_TIM_4_Interupt_Handle(void);
 void H_Bridge_TIM_5_Interupt_Handle(void);
 void H_Bridge_TIM_8_Interupt_Handle(void);
-void H_Bridge_Sync_Interupt_Handle(void);
+void H_Bridge_Deadtime_IRQn_Handle(void);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 

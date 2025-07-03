@@ -17,7 +17,7 @@ tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                     {
                             &H_Bridge_Task,
                             (void *) 0,
-                            2,                          //call every 500us
+                            3,                          //call every 500us
                             0,                          //count from start
                             false                       //is active
                     },
