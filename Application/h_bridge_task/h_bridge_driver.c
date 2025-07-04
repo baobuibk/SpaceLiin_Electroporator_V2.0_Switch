@@ -275,6 +275,8 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
         LL_TIM_EnableCounter(H_BRIDGE_DEADTIME_HANDLE);
         LL_TIM_EnableIT_UPDATE(H_BRIDGE_DEADTIME_HANDLE);
 
+        // VOM_SPI_Start_ADC(&VOM_SPI, &H_Bridge_x->ADC_Start_SPI_frame);
+
         break;
     case H_BRIDGE_MODE_HS_ON:
         LL_TIM_OC_SetMode(H_Bridge_x->TIMx, H_Bridge_x->LIN_Channel, LL_TIM_OCMODE_FORCED_INACTIVE);

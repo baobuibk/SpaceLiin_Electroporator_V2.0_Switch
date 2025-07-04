@@ -236,7 +236,7 @@ uint8_t FSP_Line_Process()
 		H_Bridge_Process_Sequence_Array();
 		
 		is_h_bridge_enable = ps_FSP_RX->Payload.set_pulse_control.State;
-		SchedulerTaskEnable(0, 1);
+		SchedulerTaskEnable(H_BRIDGE_TASK, 1);
 
 		UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_CONTROL\r\n> ");
 		return 1;
@@ -369,7 +369,7 @@ uint8_t FSP_Line_Process()
 		float current_threshold = 0.0;
 
 		current_threshold  = (float)ps_FSP_RX->Payload.set_current_limit.Current_A;
-		current_threshold += (float)ps_FSP_RX->Payload.set_current_limit.Current_mA / 1000.0;
+		current_threshold += (float)ps_FSP_RX->Payload.set_current_limit.Current_mA / 10.0;
 
 		VOM_Shunt_Overvoltage_Threshold(&VOM_SPI, current_threshold);
 
@@ -380,6 +380,18 @@ uint8_t FSP_Line_Process()
 	case FSP_CMD_OVER_CURRENT_DETECT:
 	{
 		OVC_flag_signal = false;
+
+		VOM_Reset_OVC_Flag(&VOM_SPI);
+
+		return 1;
+	}
+
+	case FSP_CMD_GET_OVC_FLAG:
+	{
+		ps_FSP_TX->CMD = FSP_CMD_GET_OVC_FLAG;
+		ps_FSP_TX->Payload.get_ovc_flag.OVC_flag_status = OVC_flag_signal;
+
+		fsp_print(2);
 
 		return 1;
 	}

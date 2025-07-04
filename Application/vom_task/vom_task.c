@@ -22,6 +22,7 @@ typedef enum
 {
     VOM_OVC_FIRST_SIGNAL,
     VOM_OVC_RESET_ACTION,
+    VOM_OVC_DATA_PROCESS,
     VOM_OVC_WAIT_FOR_RESET,
 } VOM_OVC_State_t;
 
@@ -32,9 +33,13 @@ static VOM_OVC_State_t VOM_OVC_State = VOM_OVC_FIRST_SIGNAL;
 //static bool is_OVC_signal_elapse = false;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi);
-//static uint32_t Convert_2_complement_to_unsign(int32_t val);
-static void fsp_print(uint8_t packet_length);
+__STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi, SPI_frame_t* p_SPI_frame);
+__STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi);
+__STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi);
+
+static void     VOM_Task_Data_Process(spi_stdio_typedef* p_spi);
+static uint8_t  VOM_OVC_Data_Process(spi_stdio_typedef* p_spi);
+static void     fsp_print(uint8_t packet_length);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 bool is_Measure_Impedance = false;
@@ -131,6 +136,8 @@ void VOM_OVC_Task(void*)
 
             break;
         }
+
+        is_h_bridge_enable = false;
         
         V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
 
@@ -146,7 +153,25 @@ void VOM_OVC_Task(void*)
 
         SchedulerTaskDisable(H_BRIDGE_TASK);
 
+        // VOM_OVC_State = VOM_OVC_DATA_PROCESS;
         VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+
+        break;
+    }
+
+    case VOM_OVC_DATA_PROCESS:
+    {
+        if (VOM_OVC_Data_Process(&VOM_SPI) == 1)
+        {
+            VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+            break;
+        }
+
+        if (OVC_flag_signal == false)
+        {
+            VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+            break;
+        }
 
         break;
     }
@@ -177,9 +202,48 @@ void VOM_OVC_Task(void*)
 void VOM_OVC_IRQHandler(void)
 {
     OVC_flag_signal = true;
+
+    // VOM_SPI_Read_ADC(&VOM_SPI);
+    // VOM_SPI_Stop_ADC(&VOM_SPI);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+__STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi, SPI_frame_t* p_SPI_frame)
+{
+    SPI_Write(p_spi, p_SPI_frame);
+}
+
+__STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
+{
+    SPI_frame_t SPI_frame;
+    
+    SPI_frame.addr = 0x04,
+    SPI_frame.data_size = 3,
+
+    SPI_Read(p_spi, &SPI_frame);
+
+    SPI_frame.addr = 0x05,
+    SPI_frame.data_size = 3,
+
+    SPI_Read(p_spi, &SPI_frame);
+}
+
+__STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)
+{
+    SPI_TX_data_t SPI_TX_data[2] = {0};
+    SPI_TX_data[0].mask = 0xFF;
+    SPI_TX_data[1].mask = 0xFF;
+    
+    SPI_frame_t SPI_frame =
+    {
+        .addr = 0x01,
+        .p_data_array = SPI_TX_data,
+        .data_size = 2,
+    };
+
+    SPI_Write(p_spi, &SPI_frame);
+}
+
 static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
 {
     float current[10] = {0};
@@ -250,6 +314,68 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
     ps_FSP_TX->Payload.measure_impedance.Value_high = (impedance_average >> 8);
 
     fsp_print(7);
+}
+
+static uint8_t VOM_OVC_Data_Process(spi_stdio_typedef* p_spi)
+{
+    if (SPI_RX_BUFFER_EMPTY(p_spi))
+    {
+        return 0;
+    }
+
+    float current = 0.0;
+    float volt = 0.0;
+
+    uint16_t impedance_average = 0;
+
+    int32_t current_temp = 0;
+    int32_t volt_temp = 0;
+
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    current_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    volt_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
+    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+
+    // Shift range from [-8,388,608, +8,388,607] → [0, 16,777,215]
+    current = (float)current_temp;
+    current = current * 0.000022321428;
+    
+    volt    = (float)volt_temp;
+    volt    = volt * 0.0007249792963;
+
+    current_temp = 0;
+    volt_temp    = 0;
+
+    for (uint8_t i = 0; i < 80; i++)
+    {
+        if (SPI_RX_BUFFER_EMPTY(p_spi))
+        {
+            break;
+        }
+        
+        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+    }
+    
+    impedance_average = volt / current;
+
+    return 1;
 }
 
 //static uint32_t Convert_2_complement_to_unsign(int32_t val)

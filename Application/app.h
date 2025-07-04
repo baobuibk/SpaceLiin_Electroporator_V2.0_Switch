@@ -29,6 +29,7 @@
 
 typedef enum
 {
+    VOM_OVC_TASK,
     H_BRIDGE_TASK,
     CMD_LINE_TASK,
     FSP_LINE_TASK,

@@ -521,7 +521,7 @@ int CMD_SET_PULSE_CONTROL(int argc, char *argv[])
 	H_Bridge_Process_Sequence_Array();
 
 	is_h_bridge_enable = receive_argm;
-	SchedulerTaskEnable(0, 1);
+	SchedulerTaskEnable(H_BRIDGE_TASK, 1);
 
 	return CMDLINE_OK;
 }
