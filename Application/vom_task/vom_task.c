@@ -128,7 +128,9 @@ void VOM_OVC_Task(void*)
         
     case VOM_OVC_RESET_ACTION:
     {
-        if (LL_GPIO_IsInputPinSet(VOM_OVC_PORT, VOM_OVC_PIN) == SET)
+        uint32_t VOM_OVC_port = LL_GPIO_ReadInputPort(VOM_OVC_PORT);
+        VOM_OVC_port = ((VOM_OVC_port & VOM_OVC_PIN) != 0) ? SET : RESET;
+        if (VOM_OVC_port == SET)
         {
             OVC_flag_signal = false;
 
