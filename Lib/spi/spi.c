@@ -17,6 +17,7 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 __STATIC_INLINE uint8_t SPI_make_header(uint8_t reg_addr, SPI_command_t command_type);
+__STATIC_INLINE void SPI_populate_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
 __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -70,39 +71,51 @@ void SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
 
 //*****************************************************************************
 //
-//! Send the string to the SPI.
+//! Request SPI write request with R-M-W operation.
 //!
 //! \param pcBuf points to a buffer containing the string to transmit.
 //
 //*****************************************************************************
 void SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 {
-    SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_WRITE);
+    SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_WRITE_MODIFY);
 }
 
 //*****************************************************************************
 //
-//! Send the string to the SPI.
+//! Request SPI read request.
 //!
 //! \param pcBuf points to a buffer containing the string to transmit.
 //
 //*****************************************************************************
 void SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 {
+    for (uint8_t i = 0; i <= p_frame->data_size; i++)
+    {
+        p_frame->p_data_array[i].mask = 0xFF;
+        p_frame->p_data_array[i].data = 0xFF;
+    }
+    
     SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_READ);
 }
 
 //*****************************************************************************
 //
-//! Send the string to the SPI.
+//! Request SPI write request with overwrite operation.
 //!
 //! \param pcBuf points to a buffer containing the string to transmit.
 //
 //*****************************************************************************
-// void SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
-// {
-//     SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_WRITE);
-// }
+void SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
+{
+    for (uint8_t i = 0; i <= p_frame->data_size; i++)
+    {
+        p_frame->p_data_array[i].mask = 0xFF;
+        p_frame->p_data_array[i].data = 0xFF;
+    }
+
+    SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_WRITE);
+}
 
 //*****************************************************************************
 //
@@ -112,76 +125,20 @@ void SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 //! \return Returns the count of characters written.
 //
 //*****************************************************************************
-uint16_t SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command)
+void SPI_Add_to_TX_buffer   (
+                                spi_stdio_typedef*  p_spi,
+                                SPI_frame_t*        p_frame,
+                                SPI_command_t       command
+                            )
 {
-
-    //uint8_t uIdx;
-
-    for(int8_t Idx = p_frame->data_size; Idx >= 0; Idx--)
+    if (command == SPI_WRITE_MODIFY)
     {
-        if (SPI_TX_BUFFER_FULL(p_spi))
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
-            break;
-        }
-        
-        p_spi->p_TX_buffer[p_spi->TX_write_index].command = SPI_READ;
-
-        if (Idx == p_frame->data_size)
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_HEADER;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask      = 0xFF;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data      = SPI_make_header(p_frame->addr, SPI_READ);
-        }
-        else if (Idx == 0)
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = 0xFF;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data = 0xFF;
-        }
-        else
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_DATA;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = 0xFF;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data = 0xFF;
-        }
-
-        SPI_ADVANCE_TX_WRITE_INDEX(p_spi);
+        SPI_populate_TX_buffer(p_spi, p_frame, SPI_READ_TO_TEMP);
+        SPI_populate_TX_buffer(p_spi, p_frame, SPI_WRITE_MODIFY);
     }
-
-    if (command == SPI_WRITE)
-    {   
-        for(int8_t Idx = p_frame->data_size; Idx >= 0; Idx--)
-        {
-            if (SPI_TX_BUFFER_FULL(p_spi))
-            {
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
-                break;
-            }
-
-            p_spi->p_TX_buffer[p_spi->TX_write_index].command = SPI_WRITE;
-
-            if (Idx == p_frame->data_size)
-            {
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_HEADER;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].mask      = 0xFF;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data      = SPI_make_header(p_frame->addr, SPI_WRITE);
-            }
-            else if (Idx == 0)
-            {
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
-            }
-            else
-            {
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_DATA;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
-                p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
-            }
-
-            SPI_ADVANCE_TX_WRITE_INDEX(p_spi);
-        }
+    else
+    {
+        SPI_populate_TX_buffer(p_spi, p_frame, command);
     }
 
     //
@@ -201,7 +158,7 @@ uint16_t SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SP
     //
     // Return the number of characters written.
     //
-    return(0);
+    return;
 }
 
 //*****************************************************************************
@@ -334,27 +291,22 @@ uint16_t SPI_get_next_buffer_index(uint16_t ui16Index, uint16_t addition, uint16
     return(ui16Index);
 }
 
-void SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi)
-{
-    if (p_spi->temp_RX_index == 0)
-    {
-        return;
-    }
-
-    //p_spi->p_RX_buffer[p_spi->RX_write_index].data_type = p_spi->p_temp_RX_buffer[0].data_type;
-    // p_spi->p_RX_buffer[p_spi->RX_write_index] = p_spi->p_temp_RX_buffer[0];
-
-    // SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
+// void SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi)
+// {
+//     if (p_spi->temp_RX_index == 0)
+//     {
+//         return;
+//     }
     
-    for (int8_t Idx = 0; Idx < p_spi->temp_RX_index; Idx++)
-    {
-        p_spi->p_RX_buffer[p_spi->RX_write_index] = p_spi->p_temp_RX_buffer[Idx];
+//     for (int8_t Idx = 0; Idx < p_spi->temp_RX_index; Idx++)
+//     {
+//         p_spi->p_RX_buffer[p_spi->RX_write_index] = p_spi->p_temp_RX_buffer[Idx];
 
-        SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
-    }
+//         SPI_ADVANCE_RX_WRITE_INDEX(p_spi);
+//     }
 
-    p_spi->temp_RX_index = 0;
-}
+//     p_spi->temp_RX_index = 0;
+// }
 
 //*****************************************************************************
 //
@@ -364,19 +316,14 @@ void SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi)
 //*****************************************************************************
 void SPI_Prime_Transmit(spi_stdio_typedef* p_spi)
 {
-    if (SPI_TX_BUFFER_EMPTY(p_spi))
-    {
-        return;
-    }
+    // if (SPI_TX_BUFFER_EMPTY(p_spi))
+    // {
+    //     return;
+    // }
 
     if (p_spi->p_TX_buffer[p_spi->TX_read_index].data_type == SPI_HEADER)
     {
-        if(p_spi->p_TX_buffer[p_spi->TX_read_index].command == SPI_READ)
-        {
-            SPI_flush_temp_to_RX_buffer(p_spi);
-        }
-
-        if(p_spi->p_TX_buffer[p_spi->TX_read_index].command == SPI_WRITE)
+        if(p_spi->p_TX_buffer[p_spi->TX_read_index].command == SPI_WRITE_MODIFY)
         {
             SPI_modified_raw_data(p_spi, p_spi->TX_read_index);
         }
@@ -399,6 +346,53 @@ __STATIC_INLINE uint8_t SPI_make_header(uint8_t reg_addr, SPI_command_t command_
     spi_header |= command_type;
 
     return spi_header;
+}
+
+__STATIC_INLINE void SPI_populate_TX_buffer(
+                            spi_stdio_typedef*  p_spi,
+                            SPI_frame_t*        p_frame,
+                            SPI_command_t       command)
+{
+    for(int8_t Idx = p_frame->data_size; Idx >= 0; Idx--)
+    {
+        if (SPI_TX_BUFFER_FULL(p_spi))
+        {
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
+            return;
+        }
+
+        p_spi->p_TX_buffer[p_spi->TX_write_index].command = command;
+
+        if (command == SPI_READ_TO_TEMP)
+        {
+            command = SPI_READ;
+        }
+        else if (command == SPI_WRITE_MODIFY)
+        {
+            command = SPI_WRITE;
+        }
+        
+        if (Idx == p_frame->data_size)
+        {
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_HEADER;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].mask      = 0xFF;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data      = SPI_make_header(p_frame->addr, command);
+        }
+        else if (Idx == 0)
+        {
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
+        }
+        else
+        {
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_DATA;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
+            p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
+        }
+
+        SPI_ADVANCE_TX_WRITE_INDEX(p_spi);
+    }
 }
 
 __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index)

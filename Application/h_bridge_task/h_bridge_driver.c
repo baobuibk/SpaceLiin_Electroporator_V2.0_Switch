@@ -439,7 +439,7 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
 
 __STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi, SPI_frame_t* p_SPI_frame)
 {
-    SPI_Write(p_spi, p_SPI_frame);
+    SPI_Overwrite(p_spi, p_SPI_frame);
 }
 
 __STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
@@ -470,7 +470,7 @@ __STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)
         .data_size = 2,
     };
 
-    SPI_Write(p_spi, &SPI_frame);
+    SPI_Overwrite(p_spi, &SPI_frame);
 }
 
 __STATIC_INLINE void HB_Set_Duty(PWM_TypeDef *PWMx, uint32_t _Duty, bool apply_now)

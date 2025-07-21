@@ -14,8 +14,10 @@ typedef enum
 
 typedef enum
 {
-    SPI_WRITE,
-    SPI_READ,
+    SPI_WRITE,  // DO NOT MOVE OR CHANGE POSITION
+    SPI_READ,   // DO NOT MOVE OR CHANGE POSITION
+    SPI_READ_TO_TEMP,
+    SPI_WRITE_MODIFY,
 } SPI_command_t;
 
 typedef enum
@@ -48,13 +50,6 @@ typedef struct
     uint8_t         data;
 
 } SPI_TX_buffer_t;
-
-// typedef struct
-// {
-//     SPI_data_t      data_type;
-//     uint8_t         data;
-
-// } uint8_t;
 
 typedef struct _spi_stdio_typedef
 {
@@ -91,7 +86,7 @@ void        SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
 
 void        SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
 void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
-uint16_t    SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
+void        SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
 
 uint8_t     SPI_is_buffer_full(volatile uint16_t *pui16Read,
                 volatile uint16_t *pui16Write, uint16_t ui16Size);
@@ -106,7 +101,7 @@ uint16_t    SPI_advance_buffer_index(volatile uint16_t* pui16Index, uint16_t ui1
 
 uint16_t    SPI_get_next_buffer_index(uint16_t ui16Index, uint16_t addition, uint16_t ui16Size);
 
-void        SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi);
+// void        SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi);
 
 void        SPI_Prime_Transmit(spi_stdio_typedef* p_spi);
 

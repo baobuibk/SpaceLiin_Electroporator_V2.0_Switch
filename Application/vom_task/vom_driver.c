@@ -266,18 +266,28 @@ void VOM_driver_SPI_IRQHandler(void)
 {
     if (LL_SPI_IsActiveFlag_RXNE(VOM_SPI.handle) == true)
 	{
+        // Receive the data to reset RXNE flag
+        // depend on the SPI command, the data will be stored.
         VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = LL_SPI_ReceiveData8(VOM_SPI.handle);
+
+        if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_HEADER)
+        {
+            VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data;
+        }
 
         if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].command == SPI_READ)
         {
-            if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_HEADER)
-            {
-                VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data;
-            }
-            
+            VOM_SPI.p_RX_buffer[VOM_SPI.RX_write_index] = VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index];
+            SPI_ADVANCE_RX_WRITE_INDEX(&VOM_SPI);
+
+            VOM_SPI.temp_RX_index = 0;
+        }
+        else if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].command == SPI_READ_TO_TEMP)
+        {
             VOM_SPI.temp_RX_index++;
         }
-
+        
+        // The end of SPI frame, set the CS pin to stop SPI transmit
         if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_ENDER)
         {
             LL_GPIO_SetOutputPin(VOM_SPI.cs_port, VOM_SPI.cs_pin);
@@ -287,10 +297,6 @@ void VOM_driver_SPI_IRQHandler(void)
 
 		if (SPI_TX_BUFFER_EMPTY(&VOM_SPI))
 		{
-			//LL_GPIO_SetOutputPin(VOM_SPI.cs_port, VOM_SPI.cs_pin);
-
-			SPI_flush_temp_to_RX_buffer(&VOM_SPI);
-
 			// Buffer empty, so disable interrupts
             LL_SPI_DisableIT_RXNE(VOM_SPI.handle);
 		}
