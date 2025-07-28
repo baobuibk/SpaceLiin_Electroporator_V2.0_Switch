@@ -46,7 +46,7 @@ void VOM_Driver_Init(void)
     SPI_frame.data_size = 2;
     SPI_frame.p_data_array = SPI_data_array;
     
-    SPI_Write(&VOM_SPI, &SPI_frame);
+    SPI_Overwrite(&VOM_SPI, &SPI_frame);
 
     VOM_Shunt_Overvoltage_Threshold(&VOM_SPI, 5.0);
 
@@ -190,7 +190,7 @@ void VOM_Shunt_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float current_A)
     s_SPI_frame.data_size = 2;
     s_SPI_frame.p_data_array = s_SPI_data_array;
 
-    SPI_Write(p_spi, &s_SPI_frame);
+    SPI_Overwrite(p_spi, &s_SPI_frame);
 }
 
 void VOM_Shunt_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float current_A)
@@ -212,7 +212,7 @@ void VOM_Shunt_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float current_A)
     s_SPI_frame.data_size = 2;
     s_SPI_frame.p_data_array = s_SPI_data_array;
 
-    SPI_Write(p_spi, &s_SPI_frame);
+    SPI_Overwrite(p_spi, &s_SPI_frame);
 }
 
 void VOM_Bus_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
@@ -235,7 +235,7 @@ void VOM_Bus_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
     s_SPI_frame.data_size = 2;
     s_SPI_frame.p_data_array = s_SPI_data_array;
 
-    SPI_Write(p_spi, &s_SPI_frame);
+    SPI_Overwrite(p_spi, &s_SPI_frame);
 }
 
 void VOM_Bus_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
@@ -258,53 +258,57 @@ void VOM_Bus_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
     s_SPI_frame.data_size = 2;
     s_SPI_frame.p_data_array = s_SPI_data_array;
 
-    SPI_Write(p_spi, &s_SPI_frame);
+    SPI_Overwrite(p_spi, &s_SPI_frame);
 }
 
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
 void VOM_driver_SPI_IRQHandler(void)
 {
-    if (LL_SPI_IsActiveFlag_RXNE(VOM_SPI.handle) == true)
-	{
-        // Receive the data to reset RXNE flag
-        // depend on the SPI command, the data will be stored.
-        VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = LL_SPI_ReceiveData8(VOM_SPI.handle);
+    // Xử lý chỉ khi có data
+    if (LL_SPI_IsActiveFlag_RXNE(VOM_SPI_HANDLE))
+    {
+        // Cache index & pointer cho nhanh, hạn chế truy RAM nhiều lần
+        SPI_TX_buffer_t *p_tx = &VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index];
+        uint8_t rx_temp       = LL_SPI_ReceiveData8(VOM_SPI_HANDLE);
 
-        if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_HEADER)
+        if (p_tx->data_type == SPI_HEADER) 
         {
-            VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data;
+            rx_temp = p_tx->data;
         }
 
-        if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].command == SPI_READ)
+        // Nếu là READ, chuyển thẳng sang RX_buffer
+        if (p_tx->command == SPI_READ)
         {
-            VOM_SPI.p_RX_buffer[VOM_SPI.RX_write_index] = VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index];
+            VOM_SPI.p_RX_buffer[VOM_SPI.RX_write_index] = rx_temp;
             SPI_ADVANCE_RX_WRITE_INDEX(&VOM_SPI);
-
-            VOM_SPI.temp_RX_index = 0;
         }
-        else if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].command == SPI_READ_TO_TEMP)
+        // Nếu là READ_TO_TEMP, chỉ advance index tạm
+        else if (p_tx->command == SPI_READ_TO_TEMP)
         {
+            VOM_SPI.p_temp_RX_buffer[VOM_SPI.temp_RX_index] = rx_temp;
             VOM_SPI.temp_RX_index++;
         }
-        
-        // The end of SPI frame, set the CS pin to stop SPI transmit
-        if (VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index].data_type == SPI_ENDER)
+
+        // Còn lại (WRITE, WRITE_MODIFY) KHÔNG LÀM GÌ - vì không có nhận data
+
+        // Nếu kết thúc 1 frame
+        if (p_tx->data_type == SPI_ENDER)
         {
-            LL_GPIO_SetOutputPin(VOM_SPI.cs_port, VOM_SPI.cs_pin);
+            LL_GPIO_SetOutputPin(VOM_SPI_CS_PORT, VOM_SPI_CS_PIN);
         }
-        
+
+        // Advance TX index sang byte tiếp theo
         SPI_ADVANCE_TX_READ_INDEX(&VOM_SPI);
 
-		if (SPI_TX_BUFFER_EMPTY(&VOM_SPI))
-		{
-			// Buffer empty, so disable interrupts
-            LL_SPI_DisableIT_RXNE(VOM_SPI.handle);
-		}
-		else
-		{
-			// There is more data in the output buffer. Send the next byte
-			SPI_Prime_Transmit(&VOM_SPI);
-		}
+        // Nếu hết buffer truyền, tắt ngắt
+        if (SPI_TX_BUFFER_EMPTY(&VOM_SPI))
+        {
+            LL_SPI_DisableIT_RXNE(VOM_SPI_HANDLE);
+            return;
+        }
+
+        // Tiếp tục gửi byte tiếp theo
+        SPI_Prime_Transmit(&VOM_SPI);
     }
 }
 

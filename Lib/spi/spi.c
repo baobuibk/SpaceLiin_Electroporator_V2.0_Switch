@@ -18,6 +18,7 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 __STATIC_INLINE uint8_t SPI_make_header(uint8_t reg_addr, SPI_command_t command_type);
 __STATIC_INLINE void SPI_populate_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
+__STATIC_INLINE void SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
 __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -89,13 +90,7 @@ void SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 //
 //*****************************************************************************
 void SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
-{
-    for (uint8_t i = 0; i <= p_frame->data_size; i++)
-    {
-        p_frame->p_data_array[i].mask = 0xFF;
-        p_frame->p_data_array[i].data = 0xFF;
-    }
-    
+{   
     SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_READ);
 }
 
@@ -108,57 +103,12 @@ void SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 //*****************************************************************************
 void SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 {
-    for (uint8_t i = 0; i <= p_frame->data_size; i++)
-    {
-        p_frame->p_data_array[i].mask = 0xFF;
-        p_frame->p_data_array[i].data = 0xFF;
-    }
+    // for (uint8_t i = 0; i <= p_frame->data_size; i++)
+    // {
+    //     p_frame->p_data_array[i].mask = 0xFF;
+    // }
 
     SPI_Add_to_TX_buffer(p_spi, p_frame, SPI_WRITE);
-}
-
-//*****************************************************************************
-//
-//! Writes a string of characters to the SPI output.
-//!
-//!
-//! \return Returns the count of characters written.
-//
-//*****************************************************************************
-void SPI_Add_to_TX_buffer   (
-                                spi_stdio_typedef*  p_spi,
-                                SPI_frame_t*        p_frame,
-                                SPI_command_t       command
-                            )
-{
-    if (command == SPI_WRITE_MODIFY)
-    {
-        SPI_populate_TX_buffer(p_spi, p_frame, SPI_READ_TO_TEMP);
-        SPI_populate_TX_buffer(p_spi, p_frame, SPI_WRITE_MODIFY);
-    }
-    else
-    {
-        SPI_populate_TX_buffer(p_spi, p_frame, command);
-    }
-
-    //
-    // If the usart txe irq is disable, this mean an usart phase is finished
-    // we need to enable the txe irq and kick start the transmit process.
-    //
-    //if (LL_SPI_IsEnabledIT_TXE(p_spi->handle) == false)
-    if (LL_SPI_IsEnabledIT_RXNE(p_spi->handle) == false)
-    {
-        //LL_GPIO_ResetOutputPin(p_spi->cs_port, p_spi->cs_pin);
-
-        SPI_Prime_Transmit(p_spi);
-        //LL_SPI_EnableIT_TXE(p_spi->handle);
-        LL_SPI_EnableIT_RXNE(p_spi->handle);
-    }
-
-    //
-    // Return the number of characters written.
-    //
-    return;
 }
 
 //*****************************************************************************
@@ -316,44 +266,55 @@ uint16_t SPI_get_next_buffer_index(uint16_t ui16Index, uint16_t addition, uint16
 //*****************************************************************************
 void SPI_Prime_Transmit(spi_stdio_typedef* p_spi)
 {
-    // if (SPI_TX_BUFFER_EMPTY(p_spi))
-    // {
-    //     return;
-    // }
+    SPI_TX_buffer_t *p_tx = &p_spi->p_TX_buffer[p_spi->TX_read_index];
 
-    if (p_spi->p_TX_buffer[p_spi->TX_read_index].data_type == SPI_HEADER)
+    if (p_tx->data_type == SPI_HEADER)
     {
-        if(p_spi->p_TX_buffer[p_spi->TX_read_index].command == SPI_WRITE_MODIFY)
+        if(p_tx->command == SPI_WRITE_MODIFY)
         {
             SPI_modified_raw_data(p_spi, p_spi->TX_read_index);
         }
 
         LL_GPIO_ResetOutputPin(p_spi->cs_port, p_spi->cs_pin);
     }
-    
-    NVIC_DisableIRQ(p_spi->irqn);
 
-    LL_SPI_TransmitData8(p_spi->handle, p_spi->p_TX_buffer[p_spi->TX_read_index].data);
-
-    NVIC_EnableIRQ(p_spi->irqn);
+    LL_SPI_TransmitData8(p_spi->handle, p_tx->data);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 __STATIC_INLINE uint8_t SPI_make_header(uint8_t reg_addr, SPI_command_t command_type)
 {
-    uint8_t spi_header = 0;
-    spi_header  = reg_addr << 2;
-    spi_header |= command_type;
-
-    return spi_header;
+    // Tạo header: [reg_addr(6b) | command(2b)]
+    return (uint8_t)((reg_addr << 2) | (command_type & 0x03));
 }
 
 __STATIC_INLINE void SPI_populate_TX_buffer(
-                            spi_stdio_typedef*  p_spi,
-                            SPI_frame_t*        p_frame,
-                            SPI_command_t       command)
+                                            spi_stdio_typedef*  p_spi,
+                                            SPI_frame_t*        p_frame,
+                                            SPI_command_t       command)
 {
-    for(int8_t Idx = p_frame->data_size; Idx >= 0; Idx--)
+    SPI_data_t    data_type_temp;
+    int8_t        data_idx = p_frame->data_size;
+
+    SPI_TX_buffer_t* p_TX_buffer_temp;
+
+    if (command == SPI_READ_TO_TEMP)
+    {
+        p_frame->p_data_array[data_idx].data = SPI_make_header(p_frame->addr, SPI_READ);
+    }
+    else if (command == SPI_WRITE_MODIFY)
+    {
+        p_frame->p_data_array[data_idx].data = SPI_make_header(p_frame->addr, SPI_WRITE);
+    }
+    else
+    {
+        p_frame->p_data_array[data_idx].data = SPI_make_header(p_frame->addr, command);
+    }
+
+    data_type_temp = SPI_HEADER;
+    p_frame->p_data_array[data_idx].mask = 0xFF;
+
+    do
     {
         if (SPI_TX_BUFFER_FULL(p_spi))
         {
@@ -361,58 +322,65 @@ __STATIC_INLINE void SPI_populate_TX_buffer(
             return;
         }
 
-        p_spi->p_TX_buffer[p_spi->TX_write_index].command = command;
+        p_TX_buffer_temp = &p_spi->p_TX_buffer[p_spi->TX_write_index];
 
-        if (command == SPI_READ_TO_TEMP)
-        {
-            command = SPI_READ;
-        }
-        else if (command == SPI_WRITE_MODIFY)
-        {
-            command = SPI_WRITE;
-        }
-        
-        if (Idx == p_frame->data_size)
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_HEADER;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask      = 0xFF;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data      = SPI_make_header(p_frame->addr, command);
-        }
-        else if (Idx == 0)
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_ENDER;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
-        }
-        else
-        {
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data_type = SPI_DATA;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].mask = p_frame->p_data_array[Idx].mask;
-            p_spi->p_TX_buffer[p_spi->TX_write_index].data = p_frame->p_data_array[Idx].data;
-        }
+        p_TX_buffer_temp->data_type = data_type_temp;
+        p_TX_buffer_temp->mask      = p_frame->p_data_array[data_idx].mask;
+        p_TX_buffer_temp->data      = p_frame->p_data_array[data_idx].data;
 
         SPI_ADVANCE_TX_WRITE_INDEX(p_spi);
+
+        data_idx--;
+
+        data_type_temp = data_idx == 0 ? SPI_ENDER : SPI_DATA;
+
+        if (command == SPI_READ || command == SPI_READ_TO_TEMP)
+        {
+            p_frame->p_data_array[data_idx].data = 0xFF;
+        }
+    } 
+    while (data_idx >= 0);
+}
+
+__STATIC_INLINE void SPI_Add_to_TX_buffer(
+                                        spi_stdio_typedef*  p_spi,
+                                        SPI_frame_t*        p_frame,
+                                        SPI_command_t       command)
+{
+    if (command == SPI_WRITE_MODIFY)
+    {
+        SPI_populate_TX_buffer(p_spi, p_frame, SPI_READ_TO_TEMP);
+        SPI_populate_TX_buffer(p_spi, p_frame, SPI_WRITE_MODIFY);
+    }
+    else
+    {
+        SPI_populate_TX_buffer(p_spi, p_frame, command);
+    }
+
+    if (!LL_SPI_IsEnabledIT_RXNE(p_spi->handle))
+    {
+        SPI_Prime_Transmit(p_spi);
+        LL_SPI_EnableIT_RXNE(p_spi->handle);
     }
 }
 
 __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index)
 {
     if (p_spi->temp_RX_index == 0)
-    {
         return;
-    }
 
-    uint8_t current_value = 0, value = 0, mask = 0, modified_value = 0;
     uint16_t tx_buffer_size = p_spi->TX_size;
 
-    for (int8_t i = 1; i < p_spi->temp_RX_index; i++)
+    for (int8_t data_idx = 1; data_idx < p_spi->temp_RX_index; data_idx++)
     {
-        current_value  = p_spi->p_temp_RX_buffer[i];
-        value          = p_spi->p_TX_buffer[SPI_get_next_buffer_index(current_TX_read_index, i, tx_buffer_size)].data;
-        mask           = p_spi->p_TX_buffer[SPI_get_next_buffer_index(current_TX_read_index, i, tx_buffer_size)].mask;
-        modified_value = (current_value & ~mask) | (value & mask);
+        uint16_t buf_idx = SPI_get_next_buffer_index(current_TX_read_index, data_idx, tx_buffer_size);
 
-        p_spi->p_TX_buffer[SPI_get_next_buffer_index(current_TX_read_index, i, tx_buffer_size)].data = modified_value;
+        uint8_t  current_value  = p_spi->p_temp_RX_buffer[data_idx];
+        uint8_t  tx_data        = p_spi->p_TX_buffer[buf_idx].data;
+        uint8_t  tx_mask        = p_spi->p_TX_buffer[buf_idx].mask;
+
+        // Read-modify-write
+        p_spi->p_TX_buffer[buf_idx].data = (current_value & ~tx_mask) | (tx_data & tx_mask);
     }
 
     p_spi->temp_RX_index = 0;

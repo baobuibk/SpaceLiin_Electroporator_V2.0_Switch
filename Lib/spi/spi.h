@@ -86,7 +86,7 @@ void        SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
 
 void        SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
 void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
-void        SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
+void        SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
 
 uint8_t     SPI_is_buffer_full(volatile uint16_t *pui16Read,
                 volatile uint16_t *pui16Write, uint16_t ui16Size);
