@@ -222,12 +222,12 @@ __STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
     SPI_frame.addr = 0x04,
     SPI_frame.data_size = 3,
 
-    SPI_Read(p_spi, &SPI_frame);
+    SPI_Read(p_spi, &SPI_frame, 1);
 
     SPI_frame.addr = 0x05,
     SPI_frame.data_size = 3,
 
-    SPI_Read(p_spi, &SPI_frame);
+    SPI_Read(p_spi, &SPI_frame, 1);
 }
 
 __STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)

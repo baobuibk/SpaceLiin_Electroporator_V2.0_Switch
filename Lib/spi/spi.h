@@ -12,13 +12,16 @@ typedef enum
     SPI_READ_STATE, 
 } SPI_state_t;
 
+// Only the 2 LSB are used for SPI header (00: WRITE, 01: READ)
+// Higher bits can be used for internal logic.
 typedef enum
 {
-    SPI_WRITE,  // DO NOT MOVE OR CHANGE POSITION
-    SPI_READ,   // DO NOT MOVE OR CHANGE POSITION
-    SPI_READ_TO_TEMP,
-    SPI_WRITE_MODIFY,
+    SPI_WRITE = 0,                          // DO NOT MOVE OR CHANGE POSITION
+    SPI_READ  = 1,                          // DO NOT MOVE OR CHANGE POSITION
+    SPI_WRITE_MODIFY = 0x04 | SPI_WRITE,    // Internal logic, treated as WRITE on wire
+    SPI_READ_TO_TEMP = 0x04 | SPI_READ,     // Internal logic, treated as READ on wire
 } SPI_command_t;
+
 
 typedef enum
 {
@@ -85,7 +88,7 @@ void        SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
                 uint16_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin);
 
 void        SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
-void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
+void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, uint8_t frame_count);
 void        SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
 
 uint8_t     SPI_is_buffer_full(volatile uint16_t *pui16Read,

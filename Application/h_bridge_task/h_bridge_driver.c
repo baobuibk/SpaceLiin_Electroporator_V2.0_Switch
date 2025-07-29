@@ -15,18 +15,18 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Private Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static SPI_TX_data_t VOM_SPI_TX_data[3] = {0};
-static SPI_frame_t VOM_SPI_current_frame =
+static SPI_frame_t VOM_SPI_ADC_frame[2] =
 {
-    .addr = 0x04,
-    .p_data_array = VOM_SPI_TX_data,
-    .data_size = 3,
-};
-
-static SPI_frame_t VOM_SPI_volt_frame =
-{
-    .addr = 0x05,
-    .p_data_array = VOM_SPI_TX_data,
-    .data_size = 3,
+    {
+        .addr = 0x04,
+        .p_data_array = VOM_SPI_TX_data,
+        .data_size = 3,
+    },
+    {
+        .addr = 0x05,
+        .p_data_array = VOM_SPI_TX_data,
+        .data_size = 3,
+    }
 };
 
 static SPI_TX_data_t VOM_SPI_Stop_ADC_TX_data[2] =
@@ -561,8 +561,7 @@ __STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi)
 
 __STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
 {
-    SPI_Read(p_spi, &VOM_SPI_current_frame);
-    SPI_Read(p_spi, &VOM_SPI_volt_frame);
+    SPI_Read(p_spi, VOM_SPI_ADC_frame, 2);
 }
 
 __STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)

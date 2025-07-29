@@ -168,7 +168,7 @@ void VOM_Reset_OVC_Flag(spi_stdio_typedef* p_spi)
     SPI_frame.addr = 0x0B,
     SPI_frame.data_size = 2,
 
-    SPI_Read(p_spi, &SPI_frame);
+    SPI_Read(p_spi, &SPI_frame, 1);
 }
 
 void VOM_Shunt_Overvoltage_Threshold(spi_stdio_typedef* p_spi, float current_A)
@@ -262,14 +262,34 @@ void VOM_Bus_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
 }
 
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
+__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index)
+{
+    if (p_spi->temp_RX_index == 0)
+        return;
+
+    uint16_t tx_buffer_size = p_spi->TX_size;
+    uint16_t buf_idx;
+    SPI_TX_buffer_t* p_TX_buffer_temp;
+
+    for (int8_t data_idx = 1; data_idx < p_spi->temp_RX_index; data_idx++)
+    {
+        buf_idx = (current_TX_read_index + data_idx) % tx_buffer_size;
+        p_TX_buffer_temp = &p_spi->p_TX_buffer[buf_idx];
+
+        p_TX_buffer_temp->data = ((p_spi->p_temp_RX_buffer[data_idx]) & ~(p_TX_buffer_temp->mask)) | ((p_TX_buffer_temp->data) & (p_TX_buffer_temp->mask));
+    }
+
+    p_spi->temp_RX_index = 0;
+}
+
 void VOM_driver_SPI_IRQHandler(void)
 {
     // Xử lý chỉ khi có data
     if (LL_SPI_IsActiveFlag_RXNE(VOM_SPI_HANDLE))
     {
         // Cache index & pointer cho nhanh, hạn chế truy RAM nhiều lần
-        SPI_TX_buffer_t *p_tx = &VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index];
-        uint8_t rx_temp       = LL_SPI_ReceiveData8(VOM_SPI_HANDLE);
+        SPI_TX_buffer_t *p_tx       = &VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index];
+        uint8_t rx_temp             = LL_SPI_ReceiveData8(VOM_SPI_HANDLE);
 
         if (p_tx->data_type == SPI_HEADER) 
         {
@@ -308,7 +328,20 @@ void VOM_driver_SPI_IRQHandler(void)
         }
 
         // Tiếp tục gửi byte tiếp theo
-        SPI_Prime_Transmit(&VOM_SPI);
+        // SPI_Prime_Transmit(&VOM_SPI);
+        p_tx = &VOM_SPI.p_TX_buffer[VOM_SPI.TX_read_index];
+
+        if (p_tx->data_type == SPI_HEADER)
+        {
+            if(p_tx->command == SPI_WRITE_MODIFY)
+            {
+                SPI_modified_raw_data(&VOM_SPI, VOM_SPI.TX_read_index);
+            }
+
+            LL_GPIO_ResetOutputPin(VOM_SPI.cs_port, VOM_SPI.cs_pin);
+        }
+
+        LL_SPI_TransmitData8(VOM_SPI_HANDLE, p_tx->data);
     }
 }
 
