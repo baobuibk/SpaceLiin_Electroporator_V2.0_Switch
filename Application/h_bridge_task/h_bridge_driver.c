@@ -252,7 +252,7 @@ void H_Bridge_Calculate_Timing(
     p_HB_task_data->HB_pole_pulse.VOM_Timer_On_Prescaler    = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.VOM_Timer_On_ARR          = 119;
 
-    off_time_temp                                           = ((float)Set_off_time_ms * 1.0) / (float)Set_sampling_OFF_pulse_count;
+    off_time_temp                                           = (float)Set_off_time_ms / (float)Set_sampling_OFF_pulse_count;
     result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * off_time_temp) / (119.0 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.VOM_Timer_Off_Prescaler   = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.VOM_Timer_Off_ARR         = 119;
@@ -431,8 +431,6 @@ void H_Bridge_Deadtime_IRQn_Handle(void)
             LL_TIM_DisableCounter(H_BRIDGE_DEADTIME_HANDLE);
             LL_TIM_SetCounter(H_BRIDGE_DEADTIME_HANDLE, 0);
 
-            VOM_SPI_Start_ADC(&VOM_SPI);
-
             return;
         }
         
@@ -518,7 +516,14 @@ __STATIC_INLINE void H_Bridge_Interupt_Handle(H_Bridge_typdef* p_HB_TIM_x_IRQn)
             }
 
             LL_TIM_EnableCounter(H_BRIDGE_VOM_TIMER_HANDLE);
-            VOM_SPI_Read_ADC(&VOM_SPI);
+            if (p_HB_TIM_x_IRQn->pulse_count == 1)
+            {
+                VOM_SPI_Start_ADC(&VOM_SPI);
+            }
+            else
+            {
+                VOM_SPI_Read_ADC(&VOM_SPI);
+            }
 
             // Eveytime a pulse is finish we must reinit OCMODE_PWM2 for the LIN channel
             LL_TIM_OC_SetMode(p_HB_TIM_x_IRQn->TIMx, p_HB_TIM_x_IRQn->LIN_Channel, LL_TIM_OCMODE_PWM2);
@@ -549,8 +554,7 @@ __STATIC_INLINE void VOM_SPI_Start_ADC(spi_stdio_typedef* p_spi)
         .measure_mode = VOM_BUS_SHUNT_CONT,
         .vsh_ct       = CT_50US,
         .vbus_ct      = CT_50US,
-        .avg_vsh      = 1,
-        .avg_vbus     = 1
+        .avg          = AVG_1,
     };
 
     // Tạo frame một lần duy nhất sau đó xài lại
