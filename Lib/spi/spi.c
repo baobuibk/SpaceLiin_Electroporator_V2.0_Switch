@@ -19,7 +19,7 @@
 __STATIC_INLINE uint8_t SPI_make_header(uint8_t reg_addr, SPI_command_t command_type);
 __STATIC_INLINE void SPI_populate_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
 __STATIC_INLINE void SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, uint8_t frame_count, SPI_command_t command);
-__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index);
+__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint32_t current_TX_read_index);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /**
@@ -34,9 +34,9 @@ __STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t cu
  */
 void SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
                 IRQn_Type _irqn, uint8_t* _p_temp_RX_buffer,
-                uint16_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
-                uint16_t _TX_size, uint8_t* _p_RX_buffer,
-                uint16_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin)
+                uint32_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
+                uint32_t _TX_size, uint8_t* _p_RX_buffer,
+                uint32_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin)
 {
     p_spi->handle  = _handle;
     p_spi->irqn    = _irqn;
@@ -124,11 +124,11 @@ void SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame)
 //! \return Returns \b 1 if the buffer is full or \b 0 otherwise.
 //
 //*****************************************************************************
-uint8_t SPI_is_buffer_full(volatile uint16_t *pui16Read,
-             volatile uint16_t *pui16Write, uint16_t ui16Size)
+uint8_t SPI_is_buffer_full(volatile uint32_t *pui16Read,
+             volatile uint32_t *pui16Write, uint32_t ui16Size)
 {
-    uint16_t ui16Write;
-    uint16_t ui16Read;
+    uint32_t ui16Write;
+    uint32_t ui16Read;
 
     ui16Write = *pui16Write;
     ui16Read = *pui16Read;
@@ -153,11 +153,11 @@ uint8_t SPI_is_buffer_full(volatile uint16_t *pui16Read,
 //! \return Returns \b 1 if the buffer is empty or \b 0 otherwise.
 //
 //*****************************************************************************
-uint8_t SPI_is_buffer_empty(volatile uint16_t *pui16Read,
-              volatile uint16_t *pui16Write)
+uint8_t SPI_is_buffer_empty(volatile uint32_t *pui16Read,
+              volatile uint32_t *pui16Write)
 {
-    uint16_t ui16Write;
-    uint16_t ui16Read;
+    uint32_t ui16Write;
+    uint32_t ui16Read;
 
     ui16Write = *pui16Write;
     ui16Read = *pui16Read;
@@ -182,11 +182,11 @@ uint8_t SPI_is_buffer_empty(volatile uint16_t *pui16Read,
 //! \return Returns the number of bytes of data currently in the buffer.
 //
 //*****************************************************************************
-uint16_t SPI_get_buffer_count(volatile uint16_t *pui16Read,
-               volatile uint16_t *pui16Write, uint16_t ui16Size)
+uint32_t SPI_get_buffer_count(volatile uint32_t *pui16Read,
+               volatile uint32_t *pui16Write, uint32_t ui16Size)
 {
-    uint16_t ui16Write;
-    uint16_t ui16Read;
+    uint32_t ui16Write;
+    uint32_t ui16Read;
 
     ui16Write = *pui16Write;
     ui16Read = *pui16Read;
@@ -209,7 +209,7 @@ uint16_t SPI_get_buffer_count(volatile uint16_t *pui16Read,
 //! \return Returns the number of bytes of data currently in the buffer.
 //
 //*****************************************************************************
-uint16_t SPI_advance_buffer_index(volatile uint16_t* pui16Index, uint16_t ui16Size)
+uint32_t SPI_advance_buffer_index(volatile uint32_t* pui16Index, uint32_t ui16Size)
 {
     *pui16Index = (*pui16Index + 1) % ui16Size;
 
@@ -230,7 +230,7 @@ uint16_t SPI_advance_buffer_index(volatile uint16_t* pui16Index, uint16_t ui16Si
 //! \return Returns the number of bytes of data currently in the buffer.
 //
 //*****************************************************************************
-uint16_t SPI_get_next_buffer_index(uint16_t ui16Index, uint16_t addition, uint16_t ui16Size)
+uint32_t SPI_get_next_buffer_index(uint32_t ui16Index, uint32_t addition, uint32_t ui16Size)
 {
     ui16Index = (ui16Index + addition) % ui16Size;
 
@@ -335,13 +335,13 @@ __STATIC_INLINE void SPI_Add_to_TX_buffer(
     }
 }
 
-__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index)
+__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint32_t current_TX_read_index)
 {
     if (p_spi->temp_RX_index == 0)
         return;
 
-    uint16_t tx_buffer_size = p_spi->TX_size;
-    uint16_t buf_idx;
+    uint32_t tx_buffer_size = p_spi->TX_size;
+    uint32_t buf_idx;
     SPI_TX_buffer_t* p_TX_buffer_temp;
 
     for (int8_t data_idx = 1; data_idx < p_spi->temp_RX_index; data_idx++)

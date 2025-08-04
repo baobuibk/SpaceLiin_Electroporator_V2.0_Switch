@@ -21,7 +21,7 @@
 spi_stdio_typedef VOM_SPI;
 
 SPI_TX_buffer_t g_VOM_SPI_TX_buffer[1024];
-uint8_t g_VOM_SPI_RX_buffer[57600];
+uint8_t g_VOM_SPI_RX_buffer[96000];
 uint8_t g_VOM_temp_SPI_RX_buffer[6];
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -31,7 +31,7 @@ void VOM_Driver_Init(void)
     SPI_Init(&VOM_SPI, VOM_SPI_HANDLE, VOM_SPI_IRQ,
             g_VOM_temp_SPI_RX_buffer, 6,
 			g_VOM_SPI_TX_buffer, 1024,
-			g_VOM_SPI_RX_buffer, 57600,
+			g_VOM_SPI_RX_buffer, 96000,
             VOM_SPI_CS_PORT, VOM_SPI_CS_PIN);
     
     SPI_TX_data_t SPI_data_array[5] = {0};
@@ -374,13 +374,13 @@ void VOM_Bus_Undervoltage_Threshold(spi_stdio_typedef* p_spi, float volt_V)
 }
 
 /* :::::::::: VOM SPI Interupt Handler ::::::::::::: */
-__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint16_t current_TX_read_index)
+__STATIC_INLINE void SPI_modified_raw_data(spi_stdio_typedef* p_spi, uint32_t current_TX_read_index)
 {
     if (p_spi->temp_RX_index == 0)
         return;
 
-    uint16_t tx_buffer_size = p_spi->TX_size;
-    uint16_t buf_idx;
+    uint32_t tx_buffer_size = p_spi->TX_size;
+    uint32_t buf_idx;
     SPI_TX_buffer_t* p_TX_buffer_temp;
 
     for (int8_t data_idx = 1; data_idx < p_spi->temp_RX_index; data_idx++)
