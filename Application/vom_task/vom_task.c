@@ -256,7 +256,7 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
     for (uint8_t Idx = 0; Idx < 10; Idx++)
     {
         // Skip the current (I) Opcode
-        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+        // SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
         // Merge each 8 bits raw data to a 24 bits int raw data
         current_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
@@ -269,7 +269,7 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
         // Skip the volt (V) Opcode
-        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+        // SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
         // Merge each 8 bits raw data to a 24 bits int raw data
         volt_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
