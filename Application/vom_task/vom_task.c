@@ -38,7 +38,7 @@ __STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi);
 __STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi);
 
 static void     VOM_Task_Data_Process(spi_stdio_typedef* p_spi);
-static uint8_t  VOM_OVC_Data_Process(spi_stdio_typedef* p_spi);
+// static uint8_t  VOM_OVC_Data_Process(spi_stdio_typedef* p_spi);
 static void     fsp_print(uint8_t packet_length);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -60,10 +60,6 @@ void VOM_Task(void*)
         H_Bridge_Set_Mode(&VOM_HB_Task_data.task_data[0].HB_pole_pulse, H_BRIDGE_MODE_FLOAT);
         H_Bridge_Set_Mode(&VOM_HB_Task_data.task_data[0].HB_pole_ls_on, H_BRIDGE_MODE_FLOAT);
         LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
-
-        // H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
-        // H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
-        // LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
         SchedulerTaskDisable(VOM_TASK);
         return;
@@ -128,7 +124,9 @@ void VOM_OVC_Task(void*)
         
     case VOM_OVC_RESET_ACTION:
     {
-        if (LL_GPIO_IsInputPinSet(VOM_OVC_PORT, VOM_OVC_PIN) == SET)
+        uint32_t VOM_OVC_port = LL_GPIO_ReadInputPort(VOM_OVC_PORT);
+        VOM_OVC_port = ((VOM_OVC_port & VOM_OVC_PIN) != 0) ? SET : RESET;
+        if (VOM_OVC_port == SET)
         {
             OVC_flag_signal = false;
 
@@ -159,22 +157,22 @@ void VOM_OVC_Task(void*)
         break;
     }
 
-    case VOM_OVC_DATA_PROCESS:
-    {
-        if (VOM_OVC_Data_Process(&VOM_SPI) == 1)
-        {
-            VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
-            break;
-        }
+    // case VOM_OVC_DATA_PROCESS:
+    // {
+    //     if (VOM_OVC_Data_Process(&VOM_SPI) == 1)
+    //     {
+    //         VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+    //         break;
+    //     }
 
-        if (OVC_flag_signal == false)
-        {
-            VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
-            break;
-        }
+    //     if (OVC_flag_signal == false)
+    //     {
+    //         VOM_OVC_State = VOM_OVC_WAIT_FOR_RESET;
+    //         break;
+    //     }
 
-        break;
-    }
+    //     break;
+    // }
 
     case VOM_OVC_WAIT_FOR_RESET:
     {
@@ -220,12 +218,12 @@ __STATIC_INLINE void VOM_SPI_Read_ADC(spi_stdio_typedef* p_spi)
     SPI_frame.addr = 0x04,
     SPI_frame.data_size = 3,
 
-    SPI_Read(p_spi, &SPI_frame);
+    SPI_Read(p_spi, &SPI_frame, 1);
 
     SPI_frame.addr = 0x05,
     SPI_frame.data_size = 3,
 
-    SPI_Read(p_spi, &SPI_frame);
+    SPI_Read(p_spi, &SPI_frame, 1);
 }
 
 __STATIC_INLINE void VOM_SPI_Stop_ADC(spi_stdio_typedef* p_spi)
@@ -257,8 +255,10 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
 
     for (uint8_t Idx = 0; Idx < 10; Idx++)
     {
-        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+        // Skip the current (I) Opcode
+        // SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
+        // Merge each 8 bits raw data to a 24 bits int raw data
         current_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
@@ -268,8 +268,10 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
         current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-        SPI_ADVANCE_RX_READ_INDEX(p_spi);
+        // Skip the volt (V) Opcode
+        // SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
+        // Merge each 8 bits raw data to a 24 bits int raw data
         volt_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
@@ -279,19 +281,26 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
         volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-        // Shift range from [-8,388,608, +8,388,607] → [0, 16,777,215]
-        current[Idx] = (float)current_temp;
-        //current[Idx] = (float)current[Idx] * 0.16384;
-        current[Idx] = current[Idx] * 0.000022321428;
+        // Transform from raw data to current (A)
+        // raw_data: Differential VOLTAGE measured across the shunt output. Two's complement value.
+        // 312.5E-9: Conversion factor 312.5 nV/LSB when ADCRANGE = 0.
+        // 14E-3   : INA229 shunt value
+        // raw_data * (312.5E-9 / 14E-3) = raw_data * 0.000022321428.
+        current[Idx] = (float)current_temp * 0.000022321428;
         
-        volt[Idx]    = (float)volt_temp;
-        // 0.000703438335 * 1.030622388
-        volt[Idx]    = volt[Idx] * 0.0007249792963;
+        // Transform from raw data to volt (V)
+        // raw_data   : Bus voltage output. Two's complement value, however always positive.
+        // 195.3125E-6: Conversion factor 195.3125 µV/LSB.
+        // 1347 / 374 : (37.4 + 3.3 + 2 * 47) / 37.4: Volt div circuit.
+        // 1.030622387: Magic calib number.
+        // raw_data * 195.3125E-6 * (1347 / 374) * 1.030622387 = raw_data * 0.0007249792963.
+        volt[Idx]    = (float)volt_temp * 0.0007249792963;
 
         current_temp = 0;
         volt_temp    = 0;
     }
 
+    // Flush the RX register
     for (uint8_t i = 0; i < 80; i++)
     {
         if (SPI_RX_BUFFER_EMPTY(p_spi))
@@ -302,6 +311,7 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
         SPI_ADVANCE_RX_READ_INDEX(p_spi);
     }
 
+    // Calculate average impedance of 10 sample
     for (uint8_t Idx = 0; Idx < 10; Idx++)
     {
         impedance_sum += volt[Idx] / current[Idx];
@@ -309,6 +319,7 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
     
     impedance_average = impedance_sum / 10;
 
+    // Send the result back to GP Controller
     ps_FSP_TX->CMD = FSP_CMD_MEASURE_IMPEDANCE;
     ps_FSP_TX->Payload.measure_impedance.Value_low  =  impedance_average;
     ps_FSP_TX->Payload.measure_impedance.Value_high = (impedance_average >> 8);
@@ -316,84 +327,67 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
     fsp_print(7);
 }
 
-static uint8_t VOM_OVC_Data_Process(spi_stdio_typedef* p_spi)
-{
-    if (SPI_RX_BUFFER_EMPTY(p_spi))
-    {
-        return 0;
-    }
+// static uint8_t VOM_OVC_Data_Process(spi_stdio_typedef* p_spi)
+// {
+//     if (SPI_RX_BUFFER_EMPTY(p_spi))
+//     {
+//         return 0;
+//     }
 
-    float current = 0.0;
-    float volt = 0.0;
+//     float current = 0.0;
+//     float volt = 0.0;
 
-    uint16_t impedance_average = 0;
+//     uint16_t impedance_average = 0;
 
-    int32_t current_temp = 0;
-    int32_t volt_temp = 0;
+//     int32_t current_temp = 0;
+//     int32_t volt_temp = 0;
 
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    current_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     current_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     current_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    volt_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     volt_temp = (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 12;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] << 4;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
-    SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     volt_temp |= (int32_t)p_spi->p_RX_buffer[p_spi->RX_read_index] >> 4;
+//     SPI_ADVANCE_RX_READ_INDEX(p_spi);
 
-    // Shift range from [-8,388,608, +8,388,607] → [0, 16,777,215]
-    current = (float)current_temp;
-    current = current * 0.000022321428;
+//     // Shift range from [-8,388,608, +8,388,607] → [0, 16,777,215]
+//     current = (float)current_temp;
+//     current = current * 0.000022321428;
     
-    volt    = (float)volt_temp;
-    volt    = volt * 0.0007249792963;
+//     volt    = (float)volt_temp;
+//     volt    = volt * 0.0007249792963;
 
-    current_temp = 0;
-    volt_temp    = 0;
+//     current_temp = 0;
+//     volt_temp    = 0;
 
-    for (uint8_t i = 0; i < 80; i++)
-    {
-        if (SPI_RX_BUFFER_EMPTY(p_spi))
-        {
-            break;
-        }
+//     for (uint8_t i = 0; i < 80; i++)
+//     {
+//         if (SPI_RX_BUFFER_EMPTY(p_spi))
+//         {
+//             break;
+//         }
         
-        SPI_ADVANCE_RX_READ_INDEX(p_spi);
-    }
+//         SPI_ADVANCE_RX_READ_INDEX(p_spi);
+//     }
     
-    impedance_average = volt / current;
+//     impedance_average = volt / current;
 
-    return 1;
-}
-
-//static uint32_t Convert_2_complement_to_unsign(int32_t val)
-//{
-//    // Giới hạn giá trị trong khoảng 24-bit 2's complement: [-8388608, +8388607]
-//    if (val >  8388607)
-//    {
-//        val =  8388607;
-//    }
-//
-//    if (val < -8388608)
-//    {
-//        val = -8388608;
-//    }
-//
-//    // Mask chỉ lấy 24-bit thấp nhất
-//    return (((uint32_t)val) & 0xFFFFFF);
-//}
+//     return 1;
+// }
 
 static void fsp_print(uint8_t packet_length)
 {

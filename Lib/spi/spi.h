@@ -12,11 +12,16 @@ typedef enum
     SPI_READ_STATE, 
 } SPI_state_t;
 
+// Only the 2 LSB are used for SPI header (00: WRITE, 01: READ)
+// Higher bits can be used for internal logic.
 typedef enum
 {
-    SPI_WRITE,
-    SPI_READ,
+    SPI_WRITE = 0,                          // DO NOT MOVE OR CHANGE POSITION
+    SPI_READ  = 1,                          // DO NOT MOVE OR CHANGE POSITION
+    SPI_WRITE_MODIFY = 0x04 | SPI_WRITE,    // Internal logic, treated as WRITE on wire
+    SPI_READ_TO_TEMP = 0x04 | SPI_READ,     // Internal logic, treated as READ on wire
 } SPI_command_t;
+
 
 typedef enum
 {
@@ -49,13 +54,6 @@ typedef struct
 
 } SPI_TX_buffer_t;
 
-// typedef struct
-// {
-//     SPI_data_t      data_type;
-//     uint8_t         data;
-
-// } uint8_t;
-
 typedef struct _spi_stdio_typedef
 {
     SPI_TypeDef*            handle;
@@ -63,21 +61,20 @@ typedef struct _spi_stdio_typedef
 
     uint8_t*                p_temp_RX_buffer;
 
-    volatile uint16_t       temp_RX_index;
-             uint16_t       temp_RX_size;
-             uint8_t        temp_RX_irqn_byte;
+    volatile uint8_t        temp_RX_index;
+             uint8_t        temp_RX_size;
 
     SPI_TX_buffer_t*        p_TX_buffer;
 
-    volatile uint16_t       TX_write_index;
-    volatile uint16_t       TX_read_index;
-             uint16_t       TX_size;
+    volatile uint32_t       TX_write_index;
+    volatile uint32_t       TX_read_index;
+             uint32_t       TX_size;
 
     uint8_t*                p_RX_buffer;
 
-    volatile uint16_t       RX_write_index;
-    volatile uint16_t       RX_read_index;
-             uint16_t       RX_size;
+    volatile uint32_t       RX_write_index;
+    volatile uint32_t       RX_read_index;
+             uint32_t       RX_size;
 
     GPIO_TypeDef*           cs_port;
     uint32_t                cs_pin;
@@ -85,28 +82,28 @@ typedef struct _spi_stdio_typedef
 
 void        SPI_Init( spi_stdio_typedef* p_spi, SPI_TypeDef* _handle,
                 IRQn_Type _irqn, uint8_t* _p_temp_RX_buffer,
-                uint16_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
-                uint16_t _TX_size, uint8_t* _p_RX_buffer,
-                uint16_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin);
+                uint32_t _temp_RX_size, SPI_TX_buffer_t* _p_TX_buffer,
+                uint32_t _TX_size, uint8_t* _p_RX_buffer,
+                uint32_t _RX_size, GPIO_TypeDef* _cs_port, uint32_t _cs_pin);
 
 void        SPI_Write(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
-void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
-uint16_t    SPI_Add_to_TX_buffer(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, SPI_command_t command);
+void        SPI_Read(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame, uint8_t frame_count);
+void        SPI_Overwrite(spi_stdio_typedef* p_spi, SPI_frame_t* p_frame);
 
-uint8_t     SPI_is_buffer_full(volatile uint16_t *pui16Read,
-                volatile uint16_t *pui16Write, uint16_t ui16Size);
+uint8_t     SPI_is_buffer_full(volatile uint32_t *pui16Read,
+                volatile uint32_t *pui16Write, uint32_t ui16Size);
 
-uint8_t     SPI_is_buffer_empty(volatile uint16_t *pui16Read,
-                volatile uint16_t *pui16Write);
+uint8_t     SPI_is_buffer_empty(volatile uint32_t *pui16Read,
+                volatile uint32_t *pui16Write);
 
-uint16_t    SPI_get_buffer_count(volatile uint16_t *pui16Read,
-                volatile uint16_t *pui16Write, uint16_t ui16Size);
+uint32_t    SPI_get_buffer_count(volatile uint32_t *pui16Read,
+                volatile uint32_t *pui16Write, uint32_t ui16Size);
 
-uint16_t    SPI_advance_buffer_index(volatile uint16_t* pui16Index, uint16_t ui16Size);
+uint32_t    SPI_advance_buffer_index(volatile uint32_t* pui16Index, uint32_t ui16Size);
 
-uint16_t    SPI_get_next_buffer_index(uint16_t ui16Index, uint16_t addition, uint16_t ui16Size);
+uint32_t    SPI_get_next_buffer_index(uint32_t ui16Index, uint32_t addition, uint32_t ui16Size);
 
-void        SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi);
+// void        SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi);
 
 void        SPI_Prime_Transmit(spi_stdio_typedef* p_spi);
 

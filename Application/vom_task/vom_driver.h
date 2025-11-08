@@ -11,11 +11,36 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef enum
 {
-    VOM_HV_ON,
-    VOM_HV_OFF,
-    VOM_LV_ON,
-    VOM_LV_OFF,
-} VOM_Data_State_t;
+    VOM_PULSE_ON,
+    VOM_PULSE_OFF,
+} VOM_Pulse_State_t;
+
+typedef enum
+{
+    VOM_TASK_HV_POS,
+    VOM_TASK_HV_NEG,
+    VOM_TASK_LV_POS,
+    VOM_TASK_LV_NEG,
+} VOM_Task_State_t;
+
+typedef enum
+{
+    VOM_CURRENT_TYPE,
+    VOM_VOLT_TYPE,
+} VOM_Data_Type_t;
+
+typedef enum
+{
+    VOM_SHUTDOWN         = 0x00,
+
+    VOM_SHUNT_SINGLE     = 0x01,
+    VOM_BUS_SINGLE       = 0x02,
+    VOM_BUS_SHUNT_SINGLE = 0x03,
+
+    VOM_SHUNT_CONT       = 0x09,
+    VOM_BUS_CONT         = 0x0A,
+    VOM_BUS_SHUNT_CONT   = 0x0B,
+} VOM_Measure_Mode_t;
 
 typedef enum
 {
@@ -31,24 +56,22 @@ typedef enum
 
 typedef enum
 {
-    VOM_SHUTDOWN         = 0x00,
-
-    VOM_SHUNT_SINGLE     = 0x01,
-    VOM_BUS_SINGLE       = 0x02,
-    VOM_BUS_SHUNT_SINGLE = 0x03,
-
-    VOM_SHUNT_CONT       = 0x09,
-    VOM_BUS_CONT         = 0x0A,
-    VOM_BUS_SHUNT_CONT   = 0x0B,
-} VOM_Measure_Mode_t;
+    AVG_1    = 0x00,
+    AVG_4    = 0x01,
+    AVG_16   = 0x02,
+    AVG_64   = 0x03,
+    AVG_128  = 0x04,
+    AVG_256  = 0x05,
+    AVG_512  = 0x06,
+    AVG_1024 = 0x07
+} VOM_Avg_Count_t;
 
 typedef struct
 {
     VOM_Measure_Mode_t measure_mode;
     VOM_Conv_Time_t    vsh_ct;
     VOM_Conv_Time_t    vbus_ct;
-    uint8_t            avg_vsh;
-    uint8_t            avg_vbus;
+    VOM_Avg_Count_t    avg;
 } VOM_Config_t;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
