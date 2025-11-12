@@ -296,6 +296,12 @@ static void VOM_Task_Data_Process(spi_stdio_typedef* p_spi)
         // raw_data * 195.3125E-6 * (1347 / 374) * 1.030622387 = raw_data * 0.0007249792963.
         volt[Idx]    = (float)volt_temp * 0.0007249792963;
 
+        // Guarding denominator to have greater than 0 value.
+        if (current[Idx] <= 0)
+        {
+            current[Idx] = 0.001;
+        }
+
         current_temp = 0;
         volt_temp    = 0;
     }
