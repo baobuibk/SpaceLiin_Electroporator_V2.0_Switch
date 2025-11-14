@@ -236,7 +236,8 @@ void H_Bridge_Calculate_Timing(
     p_HB_task_data->is_setted = true;
 
     // Set timing parameter for DEADTIME TIMER
-    off_time_temp                                           = (float)Set_delay_time_ms - (0.1 * (float)Set_off_time_ms);
+    // off_time_temp                                           = (float)Set_delay_time_ms - (0.1 * (float)Set_off_time_ms);
+    off_time_temp                                           = 0.9 * (float)Set_delay_time_ms;
     result_temp                                             = (((APB1_TIMER_CLK / 1000.0) * off_time_temp) / (2399 + 1.0)) - 1.0;
     p_HB_task_data->HB_pole_pulse.Deadtime_Delay_Prescaler  = (uint16_t)(result_temp + 0.5f);
     p_HB_task_data->HB_pole_pulse.Deadtime_Delay_ARR        = 2399;

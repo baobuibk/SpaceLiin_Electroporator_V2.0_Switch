@@ -89,8 +89,10 @@ typedef struct _FSP_SET_PULSE_COUNT_FRAME_
 
 typedef struct _FSP_SET_PULSE_DELAY_FRAME_
 {
-	uint8_t 	HV_delay;
-	uint8_t 	LV_delay;
+	uint8_t 	HV_delay_high;
+	uint8_t 	HV_delay_low;
+	uint8_t 	LV_delay_high;
+	uint8_t 	LV_delay_low;
 	uint8_t 	Delay_high;		  	/* Delay time */
 	uint8_t 	Delay_low;		  	/* Delay time */
 
@@ -98,8 +100,10 @@ typedef struct _FSP_SET_PULSE_DELAY_FRAME_
 
 typedef struct _FSP_SET_PULSE_HV_FRAME_
 {
-	uint8_t 	OnTime;      	/* HV On time */
-	uint8_t 	OffTime;      	/* HV Off time */
+	uint8_t 	OnTime_high;      	/* HV On time */
+	uint8_t 	OnTime_low;      	/* HV On time */
+	uint8_t 	OffTime_high;      	/* HV Off time */
+	uint8_t 	OffTime_low;      	/* HV Off time */
 
 } FSP_SET_PULSE_HV_FRAME;
 

@@ -44,8 +44,8 @@ H_Bridge_task_typedef  HB_sequence_default =
 
 	.sequence_delay_ms = 1,
 
-	.pos_pole_index = 0,
-	.neg_pole_index = 2,
+	.pos_pole_index = 1,
+	.neg_pole_index = 0,
 
 	.pulse_delay_ms = 1,
 
@@ -54,20 +54,20 @@ H_Bridge_task_typedef  HB_sequence_default =
 
 	.hv_delay_ms = 1,
 
-	.hv_pos_on_ms = 1,
-	.hv_pos_off_ms = 1,
-    .hv_neg_on_ms = 1,
-	.hv_neg_off_ms = 1,
+	.hv_pos_on_ms = 5,
+	.hv_pos_off_ms = 5,
+    .hv_neg_on_ms = 5,
+	.hv_neg_off_ms = 5,
 
 	.lv_pos_count = 9,
 	.lv_neg_count = 11,
 
 	.lv_delay_ms = 1,
     
-	.lv_pos_on_ms = 1,
-	.lv_pos_off_ms = 1,
-    .lv_neg_on_ms = 1,
-	.lv_neg_off_ms = 1,
+	.lv_pos_on_ms = 5,
+	.lv_pos_off_ms = 5,
+    .lv_neg_on_ms = 5,
+	.lv_neg_off_ms = 5,
 };
 
 H_Bridge_task_typedef  HB_sequence_array[SEQUENCE_MAX_INDEX] = {0};

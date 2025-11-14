@@ -144,9 +144,16 @@ uint8_t FSP_Line_Process()
 		}
 
 		HB_sequence_array[CMD_sequence_index].hv_delay_ms =
-				ps_FSP_RX->Payload.set_pulse_delay.HV_delay;
+				ps_FSP_RX->Payload.set_pulse_delay.HV_delay_high;
+		HB_sequence_array[CMD_sequence_index].hv_delay_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].hv_delay_ms |=
+				ps_FSP_RX->Payload.set_pulse_delay.HV_delay_low;
+
 		HB_sequence_array[CMD_sequence_index].lv_delay_ms =
-				ps_FSP_RX->Payload.set_pulse_delay.LV_delay;
+				ps_FSP_RX->Payload.set_pulse_delay.LV_delay_high;
+		HB_sequence_array[CMD_sequence_index].lv_delay_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].lv_delay_ms |=
+				ps_FSP_RX->Payload.set_pulse_delay.LV_delay_low;
 
 		HB_sequence_array[CMD_sequence_index].pulse_delay_ms =
 				ps_FSP_RX->Payload.set_pulse_delay.Delay_high;
@@ -165,9 +172,16 @@ uint8_t FSP_Line_Process()
 		}
 
 		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms =
-				ps_FSP_RX->Payload.set_pulse_HV_pos.OnTime;
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OnTime_high;
+		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms |=
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OnTime_low;
+
 		HB_sequence_array[CMD_sequence_index].hv_pos_off_ms =
-				ps_FSP_RX->Payload.set_pulse_HV_pos.OffTime;
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OffTime_high;
+		HB_sequence_array[CMD_sequence_index].hv_pos_off_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].hv_pos_off_ms |=
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OffTime_low;
 
 		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_HV_POS\r\n> ");
 		return 1;
@@ -180,9 +194,16 @@ uint8_t FSP_Line_Process()
 		}
 
 		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms =
-				ps_FSP_RX->Payload.set_pulse_HV_neg.OnTime;
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OnTime_high;
+		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms |=
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OnTime_low;
+
 		HB_sequence_array[CMD_sequence_index].hv_neg_off_ms =
-				ps_FSP_RX->Payload.set_pulse_HV_neg.OffTime;
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OffTime_high;
+		HB_sequence_array[CMD_sequence_index].hv_neg_off_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].hv_neg_off_ms |=
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OffTime_low;
 
 		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_HV_NEG\r\n> ");
 		return 1;
