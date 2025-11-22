@@ -19,6 +19,7 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_SET_PULSE_LV_POS,
 	FSP_CMD_SET_PULSE_LV_NEG,
 	FSP_CMD_SET_PULSE_CONTROL,
+	FSP_CMD_GET_PULSE_STAGE,
 
 	/* :::::::::: Auto Accel Command :::::::: */
 	FSP_CMD_SET_AUTO_ACCEL,
@@ -62,7 +63,7 @@ typedef enum _FSP_CMD_typedef_
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Pulse Control Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _FSP_SET_SEQUENCE_INDEX_
 {
-	uint8_t 	index;			/* hv pulse count */
+	uint8_t 	index;
 } FSP_SET_SEQUENCE_INDEX;
 
 typedef struct _FSP_SET_SEQUENCE_DELAY_
@@ -121,6 +122,13 @@ typedef struct _FSP_SET_PULSE_CONTROL_FRAME_
 	uint8_t 	State;      	/* 0: OFF, 1: ON */
 
 } FSP_SET_PULSE_CONTROL_FRAME;
+
+typedef struct _FSP_GET_PULSING_STAGE_
+{
+	uint8_t 	index;		// Sequence Index
+	uint8_t 	volt_stage;	// Which volt state: HV_POS, HV_NEG, LV_POS, LV_NEG (0, 1, 2, 3, 4)
+	uint8_t 	is_begin_or_end; // Begin: 0, End: 1
+} FSP_GET_PULSING_STAGE;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Accel Command ~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _FSP_SET_AUTO_ACCEL_FRAME_
@@ -309,6 +317,7 @@ typedef union _FSP_Payload_Frame_typedef_
 	FSP_SET_PULSE_LV_FRAME					set_pulse_LV_pos;
 	FSP_SET_PULSE_LV_FRAME					set_pulse_LV_neg;
 	FSP_SET_PULSE_CONTROL_FRAME				set_pulse_control;
+	FSP_GET_PULSING_STAGE					get_pulse_stage;
 
 	/* :::::::::: Auto Accel Command :::::::: */
 	FSP_SET_AUTO_ACCEL_FRAME				set_auto_accel;

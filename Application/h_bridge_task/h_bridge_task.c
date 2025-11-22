@@ -115,6 +115,13 @@ case H_BRIDGE_INITIAL_SET_STATE:
             break;
         }
     }
+
+    // -> FSP send to GPC to signal start pulsing at which volt stage
+    ps_FSP_TX->CMD = FSP_CMD_GET_PULSE_STAGE;
+    ps_FSP_TX->Payload.get_pulse_stage.index            = current_HB_Task_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.volt_stage       = current_HB_timing_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.is_begin_or_end  = 0;
+    fsp_print(4);
     
     LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
@@ -137,11 +144,25 @@ case H_BRIDGE_CHECK_PULSE_STATE:
         break;
     }
 
+    // -> FSP send to GPC to signal end pulsing at which volt stage
+    ps_FSP_TX->CMD = FSP_CMD_GET_PULSE_STAGE;
+    ps_FSP_TX->Payload.get_pulse_stage.index            = current_HB_Task_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.volt_stage       = current_HB_timing_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.is_begin_or_end  = 1;
+    fsp_print(4);
+
     if (H_Bridge_Set_Next_HB_Task_Data() == false)
     {
         is_h_bridge_enable = false;
         break;
     }
+
+    // -> FSP send to GPC to signal start pulsing at which volt stage
+    ps_FSP_TX->CMD = FSP_CMD_GET_PULSE_STAGE;
+    ps_FSP_TX->Payload.get_pulse_stage.index            = current_HB_Task_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.volt_stage       = current_HB_timing_data_index;
+    ps_FSP_TX->Payload.get_pulse_stage.is_begin_or_end  = 0;
+    fsp_print(4);
 
     V_Switch_Set_Mode(ps_current_HB_timing_data->VS_mode);
 

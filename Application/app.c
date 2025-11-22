@@ -10,7 +10,7 @@ tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                     {
                             &VOM_OVC_Task,
                             (void *) 0,
-                            20,                         //call every 500us
+                            2000,                         //call every 500us
                             0,                          //count from start
                             true                        //is active
                     },
