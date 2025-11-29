@@ -219,7 +219,7 @@ void VOM_Data_Process(spi_stdio_typedef* p_spi)
     const uint8_t SAMPLES_PER_PULSE = 10;
     const uint8_t SAMPLE_BYTE_SIZE  = 6;   // bytes per sample from INA229
 
-    const uint8_t MAX_SEQUENCE_COUNT = 6;
+    const uint8_t MAX_SEQUENCE_COUNT = 10;
     const uint8_t MAX_TASK_COUNT     = 4;
     const uint8_t MAX_PULSE_COUNT    = 20;
 

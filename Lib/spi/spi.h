@@ -103,6 +103,8 @@ uint32_t    SPI_advance_buffer_index(volatile uint32_t* pui16Index, uint32_t ui1
 
 uint32_t    SPI_get_next_buffer_index(uint32_t ui16Index, uint32_t addition, uint32_t ui16Size);
 
+void        SPI_flush_buffer(volatile uint32_t *pui16Read, volatile uint32_t *pui16Write);
+
 // void        SPI_flush_temp_to_RX_buffer(spi_stdio_typedef* p_spi);
 
 void        SPI_Prime_Transmit(spi_stdio_typedef* p_spi);
@@ -126,6 +128,9 @@ void        SPI_Prime_Transmit(spi_stdio_typedef* p_spi);
 #define SPI_TX_BUFFER_FULL(p_spi)          (SPI_is_buffer_full(&(p_spi)->TX_read_index,  \
                                                       &(p_spi)->TX_write_index, \
                                                       (p_spi)->TX_size))
+
+#define SPI_TX_FLUSH_BUFFER(p_spi)          (SPI_flush_buffer(&(p_spi)->TX_read_index,   \
+                                                       &(p_spi)->TX_write_index))
 
 #define SPI_ADVANCE_TX_WRITE_INDEX(p_spi)  (SPI_advance_buffer_index(&(p_spi)->TX_write_index, \
                                                             (p_spi)->TX_size))
@@ -152,6 +157,9 @@ void        SPI_Prime_Transmit(spi_stdio_typedef* p_spi);
 #define SPI_RX_BUFFER_FULL(p_spi)          (SPI_is_buffer_full(&(p_spi)->RX_read_index,  \
                                                       &(p_spi)->RX_write_index, \
                                                       (p_spi)->RX_size))
+
+#define SPI_RX_FLUSH_BUFFER(p_spi)          (SPI_flush_buffer(&(p_spi)->RX_read_index,   \
+                                                       &(p_spi)->RX_write_index))
 
 #define SPI_ADVANCE_RX_WRITE_INDEX(p_spi)  (SPI_advance_buffer_index(&(p_spi)->RX_write_index, \
                                                             (p_spi)->RX_size))

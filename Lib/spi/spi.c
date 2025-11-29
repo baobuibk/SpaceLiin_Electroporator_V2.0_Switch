@@ -237,6 +237,12 @@ uint32_t SPI_get_next_buffer_index(uint32_t ui16Index, uint32_t addition, uint32
     return(ui16Index);
 }
 
+void SPI_flush_buffer(volatile uint32_t *pui16Read,
+              volatile uint32_t *pui16Write)
+{
+    *pui16Read = *pui16Write;
+}
+
 //*****************************************************************************
 //
 // Take as many bytes from the transmit buffer as we have space for and move

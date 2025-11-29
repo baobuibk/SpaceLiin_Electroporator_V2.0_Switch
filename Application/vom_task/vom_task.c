@@ -74,6 +74,8 @@ void VOM_Task(void*)
             is_Measure_Impedance = false;
             break;
         }
+
+        SPI_RX_FLUSH_BUFFER(&VOM_SPI);
         
         LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
